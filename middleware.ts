@@ -1,42 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { validateTempToken } from '@/lib/temp-link-utils'
 
-const realm = 'Interview Chatbot'
+const GUEST_COOKIE = 'guest-session'
 
-function unauthorized(message: string) {
-  return new NextResponse(message, {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': `Basic realm="${realm}"`,
-      'Cache-Control': 'no-store'
-    }
-  })
+function redirectToExpired(request: NextRequest) {
+  const url = request.nextUrl.clone()
+  url.pathname = '/temp-link-expired'
+  return NextResponse.redirect(url)
 }
 
-export function middleware(request: NextRequest) {
-  const expectedUsername = process.env.AUTH_USERNAME
-  const expectedPassword = process.env.AUTH_PASSWORD
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
-  if (!expectedUsername || !expectedPassword) {
-    return new NextResponse('Basic authentication is not configured.', { status: 503 })
+  if (pathname === '/temp') {
+    return NextResponse.next()
   }
 
-  const authorization = request.headers.get('authorization')
-  if (!authorization?.startsWith('Basic ')) {
-    return unauthorized('Authentication required')
-  }
-
-  try {
-    const encodedCredentials = authorization.slice('Basic '.length).trim()
-    const credentials = atob(encodedCredentials)
-    const separator = credentials.indexOf(':')
-    const username = separator >= 0 ? credentials.slice(0, separator) : ''
-    const password = separator >= 0 ? credentials.slice(separator + 1) : ''
-
-    if (username !== expectedUsername || password !== expectedPassword) {
-      return unauthorized('Invalid credentials')
+  if (pathname === '/temp-link-expired') {
+    const token = request.nextUrl.searchParams.get('token')
+    if (token) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/temp'
+      return NextResponse.redirect(url)
     }
-  } catch {
-    return unauthorized('Invalid credentials')
+    return NextResponse.next()
+  }
+
+  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon.ico')) {
+    return NextResponse.next()
+  }
+
+  const guestCookie = request.cookies.get(GUEST_COOKIE)?.value
+
+  if (!guestCookie) {
+    return redirectToExpired(request)
+  }
+
+  const result = await validateTempToken(guestCookie)
+
+  if (!result.valid) {
+    const response = redirectToExpired(request)
+    response.cookies.delete(GUEST_COOKIE)
+    return response
   }
 
   return NextResponse.next()

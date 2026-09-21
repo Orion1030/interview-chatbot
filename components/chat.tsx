@@ -12,25 +12,6 @@ import { ChatPanel } from '@/components/chat-panel'
 import { EmptyScreen } from '@/components/empty-screen'
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor'
 import { useSession } from '@/components/session-provider'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Textarea } from './ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
-import { IconCopy, IconCheck } from '@/components/ui/icons'
 
 const IS_PREVIEW = process.env.VERCEL_ENV === 'preview'
 export interface ChatProps extends React.ComponentProps<'div'> {
@@ -53,12 +34,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const [techStackInput, setTechStackInput] = useState('')
   const [experienceInput, setExperienceInput] = useState('')
   const [input, setInput] = useState('')
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
-  const [generatedUrl, setGeneratedUrl] = useState('')
-  const [linkLoading, setLinkLoading] = useState(false)
-  const [selectedExpiry, setSelectedExpiry] = useState('30')
-  const [customMinutes, setCustomMinutes] = useState('')
-  const [copied, setCopied] = useState(false)
   const [isLoadingSession, setIsLoadingSession] = useState(false)
 
   const isInitialMount = useRef(true)
@@ -123,7 +98,10 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   useEffect(() => {
     if (currentSessionId === loadedSessionRef.current) return
 
-    setIsLoadingSession(true)
+    const shouldShowLoading = currentSessionId !== null && !isInitialMount.current
+    if (shouldShowLoading) {
+      setIsLoadingSession(true)
+    }
     stop()
     loadedSessionRef.current = currentSessionId
 
@@ -136,18 +114,25 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
           setTechStackInput(session.meta?.tech || '')
           setExperienceInput(session.meta?.experience || '')
         }
-      } else if (!isInitialMount.current) {
+      } else {
         setMessages([])
-        const profile = profiles.find(p => p.name === currentProfile)
-        setFocusInput(profile?.meta?.focus || '')
-        setTechStackInput(profile?.meta?.tech || '')
-        setExperienceInput(profile?.meta?.experience || '')
       }
-      setIsLoadingSession(false)
+      if (shouldShowLoading) {
+        setIsLoadingSession(false)
+      }
     }, 0)
 
     return () => clearTimeout(timerId)
-  }, [currentSessionId, currentProfile, profiles, loadSession, setMessages, stop])
+  }, [currentSessionId, loadSession, setMessages, stop])
+
+  useEffect(() => {
+    if (currentSessionId || isInitialMount.current) return
+
+    const profile = profiles.find(p => p.name === currentProfile)
+    setFocusInput(profile?.meta?.focus || '')
+    setTechStackInput(profile?.meta?.tech || '')
+    setExperienceInput(profile?.meta?.experience || '')
+  }, [profiles, currentProfile, currentSessionId, setFocusInput, setTechStackInput, setExperienceInput])
 
   useEffect(() => {
     const handleStartSession = (e: Event) => {
@@ -218,122 +203,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         messages={messages}
         disabled={!currentProfile}
       />
-
-      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generate Guest Access Link</DialogTitle>
-            <DialogDescription>
-              Create a temporary link for guest access.
-            </DialogDescription>
-          </DialogHeader>
-
-          {!generatedUrl ? (
-            <>
-              <Select value={selectedExpiry} onValueChange={setSelectedExpiry}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select expiry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30 minutes</SelectItem>
-                  <SelectItem value="60">1 hour</SelectItem>
-                  <SelectItem value="120">2 hours</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {selectedExpiry === 'custom' && (
-                <Input
-                  type="number"
-                  placeholder="Minutes (1-1440)"
-                  value={customMinutes}
-                  onChange={e => setCustomMinutes(e.target.value)}
-                  min="1"
-                  max="1440"
-                />
-              )}
-
-              <DialogFooter>
-                <Button
-                  onClick={async () => {
-                    const finalMinutes =
-                      selectedExpiry === 'custom'
-                        ? parseInt(customMinutes)
-                        : parseInt(selectedExpiry)
-
-                    if (
-                      isNaN(finalMinutes) ||
-                      finalMinutes < 1 ||
-                      finalMinutes > 1440
-                    ) {
-                      toast.error('Invalid time. Must be between 1 and 1440 minutes.')
-                      return
-                    }
-
-                    setLinkLoading(true)
-                    try {
-                      const res = await fetch('/api/temp-links', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ expiryMinutes: finalMinutes })
-                      })
-
-                      if (!res.ok) {
-                        const error = await res.json()
-                        throw new Error(error.error || 'Failed to generate link')
-                      }
-
-                      const data = await res.json()
-                      setGeneratedUrl(data.shareUrl)
-                      toast.success('Link generated successfully!')
-                    } catch (error) {
-                      toast.error(
-                        error instanceof Error ? error.message : 'Failed to generate link'
-                      )
-                    } finally {
-                      setLinkLoading(false)
-                    }
-                  }}
-                  disabled={linkLoading}
-                >
-                  {linkLoading ? 'Generating...' : 'Generate'}
-                </Button>
-              </DialogFooter>
-            </>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Share this link:</p>
-              <div className="flex gap-2">
-                <Input readOnly value={generatedUrl} className="text-xs" />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedUrl)
-                    setCopied(true)
-                    toast.success('Link copied to clipboard!')
-                    setTimeout(() => setCopied(false), 2000)
-                  }}
-                >
-                  {copied ? <IconCheck className="h-4 w-4" /> : <IconCopy className="h-4 w-4" />}
-                </Button>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setGeneratedUrl('')
-                    setCustomMinutes('')
-                    setSelectedExpiry('30')
-                  }}
-                >
-                  Generate another
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   )
 }
