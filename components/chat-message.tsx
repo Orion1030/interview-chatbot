@@ -8,7 +8,7 @@ import remarkMath from 'remark-math'
 import { cn, getMessageText } from '@/lib/utils'
 import { CodeBlock } from '@/components/ui/codeblock'
 import { MemoizedReactMarkdown } from '@/components/markdown'
-import { IconOpenAI, IconUser } from '@/components/ui/icons'
+import { IconOpenAI } from '@/components/ui/icons'
 import { ChatMessageActions } from '@/components/chat-message-actions'
 
 export interface ChatMessageProps {
@@ -18,20 +18,27 @@ export interface ChatMessageProps {
 export function ChatMessage({ message, ...props }: ChatMessageProps) {
   return (
     <div
-      className={cn('group relative mb-4 flex items-start md:-ml-12')}
+      className={cn(
+        'group relative mb-8 flex items-start gap-3 px-4 md:mb-10 md:px-0',
+        message.role === 'user' && 'justify-end'
+      )}
       {...props}
     >
-      <div
-        className={cn(
-          'flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border shadow',
-          message.role === 'user'
-            ? 'bg-background'
-            : 'bg-primary text-primary-foreground'
-        )}
-      >
-        {message.role === 'user' ? <IconUser /> : <IconOpenAI />}
-      </div>
-      <div className="flex-1 px-1 ml-4 space-y-2 overflow-hidden">
+      {message.role === 'assistant' && (
+        <div className="mt-1 flex size-8 shrink-0 select-none items-center justify-center rounded-full bg-foreground text-background shadow-sm">
+          <IconOpenAI />
+        </div>
+      )}
+      <div className={cn(
+        'min-w-0 overflow-hidden text-[15px] leading-7',
+        message.role === 'user'
+          ? 'max-w-[85%] rounded-3xl bg-muted px-5 py-3 text-foreground md:max-w-[72%]'
+          : 'flex-1'
+      )}>
+        {message.role === 'assistant' && (
+          <div className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground">Interview Coach</div>
+        )} 
+        <div className="space-y-2">
         <MemoizedReactMarkdown
           className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0"
           remarkPlugins={[remarkGfm, remarkMath]}
@@ -74,6 +81,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
           {getMessageText(message)}
         </MemoizedReactMarkdown>
         <ChatMessageActions message={message} />
+        </div>
       </div>
     </div>
   )
