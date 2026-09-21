@@ -4,6 +4,7 @@ import {
   ArrowDown,
   ArrowRight,
   Check,
+  Paperclip,
   ChevronDown,
   CircleStop,
   Copy,
@@ -63,6 +64,10 @@ export function IconUser(props: LucideProps) {
 
 export function IconPlus(props: LucideProps) {
   return <Plus {...props} />
+}
+
+export function IconPaperclip(props: LucideProps) {
+  return <Paperclip {...props} />
 }
 
 export function IconArrowElbow(props: LucideProps) {

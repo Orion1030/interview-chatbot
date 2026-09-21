@@ -1,40 +1,47 @@
-// middleware.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
 
-function atob(str: string) {
-  return Buffer.from(str, 'base64').toString('binary');
+const realm = 'Interview Chatbot'
+
+function unauthorized(message: string) {
+  return new NextResponse(message, {
+    status: 401,
+    headers: {
+      'WWW-Authenticate': `Basic realm="${realm}"`,
+      'Cache-Control': 'no-store'
+    }
+  })
 }
 
-export function middleware(req: NextRequest) {
-  const authHeader = req.headers.get('authorization');
+export function middleware(request: NextRequest) {
+  const expectedUsername = process.env.AUTH_USERNAME
+  const expectedPassword = process.env.AUTH_PASSWORD
 
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    return new NextResponse('Authentication required', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Protected Area"',
-      },
-    });
+  if (!expectedUsername || !expectedPassword) {
+    return new NextResponse('Basic authentication is not configured.', { status: 503 })
   }
 
-  // Decode the credentials (Base64)
-  const base64Credentials = authHeader.split(' ')[1];
-  const [username, password] = atob(base64Credentials).split(':');
-
-  // Perform your authentication check here
-  if ((username !== process.env.AUTH_USERNAME || password !== process.env.AUTH_PASSWORD) && process.env.AUTH_USERNAME) {
-    return new NextResponse('Invalid credentials', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Protected Area"',
-      },
-    });
+  const authorization = request.headers.get('authorization')
+  if (!authorization?.startsWith('Basic ')) {
+    return unauthorized('Authentication required')
   }
 
-  // Allow the request to continue if authenticated
-  return NextResponse.next();
+  try {
+    const encodedCredentials = authorization.slice('Basic '.length).trim()
+    const credentials = atob(encodedCredentials)
+    const separator = credentials.indexOf(':')
+    const username = separator >= 0 ? credentials.slice(0, separator) : ''
+    const password = separator >= 0 ? credentials.slice(separator + 1) : ''
+
+    if (username !== expectedUsername || password !== expectedPassword) {
+      return unauthorized('Invalid credentials')
+    }
+  } catch {
+    return unauthorized('Invalid credentials')
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/((?!api/auth|_next/static|_next/image|favicon.ico).*)'],
-};
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+}
