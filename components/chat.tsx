@@ -151,13 +151,8 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       const custom = e as CustomEvent<{ profileName: string; mode: 'chat' | 'resume'; meta?: Record<string, any> }>
       const { profileName, mode, meta } = custom.detail
       if (mode === 'chat') {
-        if (currentSessionId && messages.length > 0) {
-          saveCurrentSession(messages, {
-            focus: focusInput,
-            tech: techStackInput,
-            experience: experienceInput
-          })
-        }
+        // Do not persist an in-progress transcript when switching sessions.
+        // History is written only after the assistant finishes its response.
         startNewSession(profileName, 'chat')
         setMessages([])
         setInput('')
