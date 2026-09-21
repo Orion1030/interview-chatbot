@@ -180,7 +180,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
 
   return (
     <>
-      <div className={cn('pb-[200px] pt-4 md:pt-10', className)}>
+      <div className={cn('mx-auto w-full max-w-4xl flex-1 pb-[220px] pt-4 md:pt-10', className)}>
         {!currentProfile ? (
           <div className="mx-auto max-w-2xl px-4">
             <div className="rounded-lg border bg-background p-8 text-center">

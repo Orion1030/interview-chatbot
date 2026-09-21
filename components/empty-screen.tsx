@@ -11,34 +11,37 @@ const exampleMessages = [
 
 export function EmptyScreen({ setInput }: { setInput: (value: string) => void }) {
   return (
-    <div className="mx-auto max-w-2xl px-4">
-      <div className="rounded-lg border bg-background p-8">
-        <h1 className="mb-2 text-lg font-semibold">
-          Welcome!
+    <div className="mx-auto flex min-h-[58vh] max-w-3xl items-center justify-center px-4 py-16">
+      <div className="w-full text-center">
+        <div className="mx-auto mb-6 flex size-12 items-center justify-center rounded-full bg-foreground text-background shadow-sm">
+          <span className="text-xl font-semibold">i</span>
+        </div>
+        <h1 className="mb-3 text-2xl font-semibold tracking-tight md:text-3xl">
+          How can I help you prepare?
         </h1>
-        <p className="leading-normal text-muted-foreground">
-          You can start a conversation here or try the following examples:
+        <p className="mx-auto max-w-md text-sm leading-6 text-muted-foreground">
+          Practice interview questions, refine your answers, and build confidence with your personal interview coach.
         </p>
-        <div className="mt-4 flex flex-col items-start space-y-2">
+        <div className="mx-auto mt-8 grid max-w-xl gap-3 text-left sm:grid-cols-3">
           {exampleMessages.map((message, index) => (
             <Button
               key={index}
-              variant="link"
-              className="h-auto p-0 text-base"
+              variant="outline"
+              className="h-auto min-h-20 justify-start rounded-2xl p-4 text-left text-sm font-medium shadow-sm"
               onClick={() => setInput(message.message)}
             >
               <IconArrowRight className="mr-2 text-muted-foreground" />
               {message.heading}
             </Button>
           ))}
-          <Link href="./resume" target="_blank" rel="nofollow" className='flex items-center'>           
-            <IconArrowRight className="mr-2 text-muted-foreground" />
-              Resume Builder
+          <Link href="./resume" target="_blank" rel="nofollow" className="flex min-h-20 items-center rounded-2xl border bg-background p-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted">
+            <IconArrowRight className="mr-2 shrink-0 text-muted-foreground" />
+            Resume Builder
           </Link>
 
-          <Link href="./culture" target="_blank" rel="nofollow" className='flex items-center'>           
-            <IconArrowRight className="mr-2 text-muted-foreground" />
-              Culture Interview
+          <Link href="./culture" target="_blank" rel="nofollow" className="flex min-h-20 items-center rounded-2xl border bg-background p-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted">
+            <IconArrowRight className="mr-2 shrink-0 text-muted-foreground" />
+            Culture Interview
           </Link>
           
         </div>

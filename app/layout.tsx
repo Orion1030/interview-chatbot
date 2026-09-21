@@ -43,15 +43,19 @@ export default function RootLayout({ children }: RootLayoutProps) {
       >
         <Providers attribute="class" defaultTheme="dark" enableSystem={false}>
           <SessionProvider>
-            <div className="flex flex-col min-h-screen">
+            <div className="flex min-h-screen flex-col bg-background">
               <DynamicTitle />
               <CurrentProfileBar />
-              <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-                <GuestLinkIcon />
-                <ThemeToggle />
+              <div className="fixed left-3 right-3 top-3 z-50 flex items-center justify-between pointer-events-none">
+                <div className="pointer-events-auto rounded-xl border bg-background/80 p-1 shadow-sm backdrop-blur-xl">
+                  <Header />
+                </div>
+                <div className="pointer-events-auto flex items-center gap-1 rounded-xl border bg-background/80 p-1 shadow-sm backdrop-blur-xl">
+                  <GuestLinkIcon />
+                  <ThemeToggle />
+                </div>
               </div>
-              <Header />
-              <main className="flex flex-col flex-1 bg-muted/50">{children}</main>
+              <main className="flex min-h-screen flex-1 flex-col bg-muted/20 pt-16">{children}</main>
             </div>
           </SessionProvider>
         </Providers>
