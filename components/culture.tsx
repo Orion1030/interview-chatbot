@@ -211,9 +211,24 @@ export function Culture({ id, initialMessages, className }: ChatProps) {
   }, [activeProfile])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(sessionStorageKey, JSON.stringify(messages))
-  }, [messages, sessionStorageKey])
+    if (typeof window === 'undefined' || status !== 'ready') return
+
+    const persist = () => {
+      window.localStorage.setItem(sessionStorageKey, JSON.stringify(messages))
+    }
+
+    const idleId = window.requestIdleCallback
+      ? window.requestIdleCallback(persist, { timeout: 1000 })
+      : window.setTimeout(persist, 250)
+
+    return () => {
+      if (window.cancelIdleCallback && typeof idleId === 'number') {
+        window.cancelIdleCallback(idleId)
+      } else {
+        window.clearTimeout(idleId as number)
+      }
+    }
+  }, [messages, sessionStorageKey, status])
 
   const clearCurrentSession = () => {
     stop()
