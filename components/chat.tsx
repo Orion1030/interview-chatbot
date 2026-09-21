@@ -123,7 +123,10 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   useEffect(() => {
     if (currentSessionId === loadedSessionRef.current) return
 
-    setIsLoadingSession(true)
+    const shouldShowLoading = currentSessionId !== null && !isInitialMount.current
+    if (shouldShowLoading) {
+      setIsLoadingSession(true)
+    }
     stop()
     loadedSessionRef.current = currentSessionId
 
@@ -136,18 +139,25 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
           setTechStackInput(session.meta?.tech || '')
           setExperienceInput(session.meta?.experience || '')
         }
-      } else if (!isInitialMount.current) {
+      } else {
         setMessages([])
-        const profile = profiles.find(p => p.name === currentProfile)
-        setFocusInput(profile?.meta?.focus || '')
-        setTechStackInput(profile?.meta?.tech || '')
-        setExperienceInput(profile?.meta?.experience || '')
       }
-      setIsLoadingSession(false)
+      if (shouldShowLoading) {
+        setIsLoadingSession(false)
+      }
     }, 0)
 
     return () => clearTimeout(timerId)
-  }, [currentSessionId, currentProfile, profiles, loadSession, setMessages, stop])
+  }, [currentSessionId, loadSession, setMessages, stop])
+
+  useEffect(() => {
+    if (currentSessionId || isInitialMount.current) return
+
+    const profile = profiles.find(p => p.name === currentProfile)
+    setFocusInput(profile?.meta?.focus || '')
+    setTechStackInput(profile?.meta?.tech || '')
+    setExperienceInput(profile?.meta?.experience || '')
+  }, [profiles, currentProfile, currentSessionId, setFocusInput, setTechStackInput, setExperienceInput])
 
   useEffect(() => {
     const handleStartSession = (e: Event) => {

@@ -117,9 +117,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     })
 
     if (profileName) {
-      const updatedHistory = sessionHistory.map(h =>
-        h.profile === profileName ? { ...h, profile: null } : h
-      )
+      const updatedHistory = sessionHistory.filter(h => h.profile !== profileName)
       setSessionHistory(updatedHistory)
       saveHistory(updatedHistory, limitRef.current)
 
