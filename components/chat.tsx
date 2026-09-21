@@ -59,6 +59,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const [selectedExpiry, setSelectedExpiry] = useState('30')
   const [customMinutes, setCustomMinutes] = useState('')
   const [copied, setCopied] = useState(false)
+  const [isLoadingSession, setIsLoadingSession] = useState(false)
 
   const isInitialMount = useRef(true)
   const prevStatusRef = useRef<string | undefined>(undefined)
@@ -122,6 +123,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   useEffect(() => {
     if (currentSessionId === loadedSessionRef.current) return
 
+    setIsLoadingSession(true)
     stop()
     loadedSessionRef.current = currentSessionId
 
@@ -142,6 +144,8 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       setTechStackInput(profile?.meta?.tech || '')
       setExperienceInput(profile?.meta?.experience || '')
     }
+
+    setIsLoadingSession(false)
   }, [currentSessionId, currentProfile, profiles, loadSession, setMessages, stop])
 
   useEffect(() => {
@@ -177,7 +181,14 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   return (
     <>
       <div className={cn('mx-auto w-full max-w-4xl flex-1 pb-[220px] pt-4 md:pt-10', className)}>
-        {!currentProfile ? (
+        {isLoadingSession ? (
+          <div className="flex min-h-64 items-center justify-center px-4" role="status" aria-live="polite">
+            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="size-2 animate-pulse rounded-full bg-current" aria-hidden="true" />
+              Loading conversation…
+            </span>
+          </div>
+        ) : !currentProfile ? (
           <div className="mx-auto max-w-2xl px-4">
             <div className="rounded-lg border bg-background p-8 text-center">
               <h1 className="mb-2 text-lg font-semibold">No Profile Selected</h1>
