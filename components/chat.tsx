@@ -127,25 +127,26 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     stop()
     loadedSessionRef.current = currentSessionId
 
-    if (currentSessionId) {
-      // Load the selected transcript from persistent storage instead of using
-      // the provider's in-memory history state as a transcript cache.
-      const session = loadSession(currentSessionId)
-      if (session) {
-        setMessages(session.messages)
-        setFocusInput(session.meta?.focus || '')
-        setTechStackInput(session.meta?.tech || '')
-        setExperienceInput(session.meta?.experience || '')
+    const timerId = setTimeout(() => {
+      if (currentSessionId) {
+        const session = loadSession(currentSessionId)
+        if (session) {
+          setMessages(session.messages)
+          setFocusInput(session.meta?.focus || '')
+          setTechStackInput(session.meta?.tech || '')
+          setExperienceInput(session.meta?.experience || '')
+        }
+      } else if (!isInitialMount.current) {
+        setMessages([])
+        const profile = profiles.find(p => p.name === currentProfile)
+        setFocusInput(profile?.meta?.focus || '')
+        setTechStackInput(profile?.meta?.tech || '')
+        setExperienceInput(profile?.meta?.experience || '')
       }
-    } else if (!isInitialMount.current) {
-      setMessages([])
-      const profile = profiles.find(p => p.name === currentProfile)
-      setFocusInput(profile?.meta?.focus || '')
-      setTechStackInput(profile?.meta?.tech || '')
-      setExperienceInput(profile?.meta?.experience || '')
-    }
+      setIsLoadingSession(false)
+    }, 0)
 
-    setIsLoadingSession(false)
+    return () => clearTimeout(timerId)
   }, [currentSessionId, currentProfile, profiles, loadSession, setMessages, stop])
 
   useEffect(() => {

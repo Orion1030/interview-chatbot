@@ -36,24 +36,25 @@ export function PromptForm({
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
 
-  React.useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus()
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!input?.trim() || isLoading) {
+      return
     }
-  }, [])
+    setInput('')
+    await onSubmit(input, selectedFile ?? undefined)
+    setSelectedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isLoading) return
+    onKeyDown(e)
+  }
 
   return (
     <form
-      onSubmit={async e => {
-        e.preventDefault()
-        if (!input?.trim()) {
-          return
-        }
-        setInput('')
-        await onSubmit(input, selectedFile ?? undefined)
-        setSelectedFile(null)
-        if (fileInputRef.current) fileInputRef.current.value = ''
-      }}
+      onSubmit={handleFormSubmit}
       ref={formRef as React.RefObject<HTMLFormElement>}
     >
       <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background px-8 sm:rounded-md sm:border sm:px-12">
@@ -86,7 +87,7 @@ export function PromptForm({
         <Textarea
           ref={inputRef}
           tabIndex={0}
-          onKeyDown={onKeyDown}
+          onKeyDown={handleKeyDown}
           rows={1}
           value={input}
           onChange={e => setInput(e.target.value)}
