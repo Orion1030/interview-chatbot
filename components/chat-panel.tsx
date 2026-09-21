@@ -5,7 +5,6 @@ import { PromptForm } from '@/components/prompt-form'
 import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom'
 import { IconRefresh, IconStop } from '@/components/ui/icons'
 import { FooterText } from '@/components/footer'
-import { useEffect } from 'react'
 
 export interface ChatPanelProps
   extends Pick<
@@ -34,7 +33,7 @@ export function ChatPanel({
   disabled
 }: ChatPanelProps) {  
   const isLoading = status !== 'ready'
-  
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-background via-background/95 to-transparent px-3 pb-3 pt-10 md:pb-5">
       <ButtonScrollToBottom />
@@ -64,8 +63,17 @@ export function ChatPanel({
         </div>
         <div className="space-y-3 rounded-2xl border bg-background/95 px-3 py-3 shadow-lg backdrop-blur-xl sm:px-4 md:py-4">
           <PromptForm
-            onSubmit={async value => {
-              await sendMessage({ text: value })
+            onSubmit={async (value, file) => {
+              await sendMessage({
+                text: value,
+                files: file
+                  ? (() => {
+                      const fileList = new DataTransfer()
+                      fileList.items.add(file)
+                      return fileList.files
+                    })()
+                  : undefined
+              })
             }}
             input={input}
             setInput={setInput}

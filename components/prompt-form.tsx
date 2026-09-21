@@ -3,7 +3,7 @@ import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
 
 import { Button, buttonVariants } from '@/components/ui/button'
-import { IconArrowElbow, IconPlus } from '@/components/ui/icons'
+import { IconArrowElbow, IconPaperclip } from '@/components/ui/icons'
 import {
   Tooltip,
   TooltipContent,
@@ -14,11 +14,12 @@ import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
 export interface PromptProps {
-  onSubmit: (value: string) => Promise<void>
+  onSubmit: (value: string, file?: File) => Promise<void>
   input: string
   setInput: (value: string) => void
   isLoading: boolean
   disabled?: boolean
+  onFileSelect?: (file: File | null) => void
 }
 
 export function PromptForm({
@@ -26,8 +27,11 @@ export function PromptForm({
   input,
   setInput,
   isLoading,
-  disabled
+  disabled,
+  onFileSelect
 }: PromptProps) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
   const { formRef, onKeyDown } = useEnterSubmit()
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
@@ -46,29 +50,38 @@ export function PromptForm({
           return
         }
         setInput('')
-        await onSubmit(input)
+        await onSubmit(input, selectedFile ?? undefined)
+        setSelectedFile(null)
+        if (fileInputRef.current) fileInputRef.current.value = ''
       }}
       ref={formRef as React.RefObject<HTMLFormElement>}
     >
       <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background px-8 sm:rounded-md sm:border sm:px-12">
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="sr-only"
+          onChange={event => {
+            const file = event.target.files?.[0] ?? null
+            setSelectedFile(file)
+            onFileSelect?.(file)
+          }}
+          disabled={disabled || isLoading}
+        />
         <Tooltip>
           <TooltipTrigger
             type="button"
+            aria-label="Attach a file"
             className={cn(
-              buttonVariants({ size: 'sm', variant: 'outline' }),
-              'absolute left-0 top-4 h-8 w-8 rounded-full bg-background p-0 sm:left-4 text-[black]'
+              buttonVariants({ size: 'sm', variant: 'ghost' }),
+              'absolute left-2 top-4 h-8 w-8 rounded-full p-0 sm:left-4'
             )}
-            onClick={() => {
-              window.open(
-                'http://172.20.107.173:8080/',
-                'chat',
-                'width=300,height=500'
-              )
-            }}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || isLoading}
           >
-            <IconPlus />
+            <IconPaperclip />
           </TooltipTrigger>
-          <TooltipContent>New Chat</TooltipContent>
+          <TooltipContent>Attach a file</TooltipContent>
         </Tooltip>
         <Textarea
           ref={inputRef}
