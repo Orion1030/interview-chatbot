@@ -31,7 +31,7 @@ import {
   SheetTitle,
   SheetTrigger
 } from '@/components/ui/sheet'
-import { IconSidebar, IconPlus, IconEdit, IconTrash, IconMessage, IconClose } from '@/components/ui/icons'
+import { IconSidebar, IconPlus, IconEdit, IconTrash, IconMessage, IconUser, IconClose } from '@/components/ui/icons'
 
 export function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
@@ -177,7 +177,7 @@ export function Sidebar() {
                         }}
                         className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2"
                       >
-                        <IconMessage className="h-4 w-4" />
+                        <IconUser className="h-4 w-4" />
                         <span className="truncate">{profile.name}</span>
                       </button>
                       <div className="absolute right-1 hidden group-hover:flex items-center gap-0.5">
