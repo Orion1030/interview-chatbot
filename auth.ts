@@ -1,48 +1,23 @@
-import NextAuth, { type DefaultSession } from 'next-auth'
-import GoogleProvider from "next-auth/providers/google";
-import GitHub from 'next-auth/providers/github'
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      /** The user's id. */
-      id: string
-    } & DefaultSession['user']
+export type BasicSession = {
+  user: {
+    id: string
+    name: string
+    email: string
   }
 }
 
-export const {
-  handlers: { GET, POST },
-  auth,
-  CSRF_experimental // will be removed in future
-} = NextAuth({
-  providers: [
-    GitHub, 
-    GoogleProvider({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    authorization: {
-      params: {
-        prompt: "consent",
-        access_type: "offline",
-        response_type: "code"
-      }
-    }
-  })],
-  callbacks: {    
-    jwt({ token, profile }) {
-      if (profile) {
-        token.id = profile.id
-        token.image = profile.avatar_url || profile.picture
-      }
-      return token
-    },
-    authorized({ auth }) {
-      //return !!auth?.user // this ensures there is a logged in user for -every- request
-      return true;
-    }
-  },
-  pages: {
-    signIn: '/' // overrides the next-auth default signin page https://authjs.dev/guides/basics/pages
+export async function auth(): Promise<BasicSession | null> {
+  const username = process.env.AUTH_USERNAME
+
+  if (!username) {
+    return null
   }
-})
+
+  return {
+    user: {
+      id: username,
+      name: username,
+      email: `${username}@local`
+    }
+  }
+}

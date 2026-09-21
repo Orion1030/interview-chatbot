@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { SessionProvider } from 'next-auth/react'
 import { ThemeProvider } from 'next-themes'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -19,14 +18,12 @@ export function Providers({
   enableSystem?: boolean
 }>) {
   return (
-    <SessionProvider>
-      <NextThemeProvider
-        attribute={attribute}
-        defaultTheme={defaultTheme}
-        enableSystem={enableSystem}
-      >
-        <TooltipProvider>{children}</TooltipProvider>
-      </NextThemeProvider>
-    </SessionProvider>
+    <NextThemeProvider
+      attribute={attribute}
+      defaultTheme={defaultTheme}
+      enableSystem={enableSystem}
+    >
+      <TooltipProvider>{children}</TooltipProvider>
+    </NextThemeProvider>
   )
 }
