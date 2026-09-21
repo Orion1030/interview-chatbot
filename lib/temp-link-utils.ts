@@ -8,11 +8,13 @@ export async function generateTempLink(expiryMs: number): Promise<{
   const now = Math.floor(Date.now() / 1000)
   const expiresAt = now + Math.floor(expiryMs / 1000)
 
-  const token = await new SignJWT({ sub: 'guest' })
+  const jwt = await new SignJWT({ sub: 'guest' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt(now)
     .setExpirationTime(expiresAt)
     .sign(secret)
 
-  return { token }
+  const encoded = Buffer.from(jwt).toString('base64url')
+
+  return { token: encoded }
 }
