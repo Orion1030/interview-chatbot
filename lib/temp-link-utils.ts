@@ -1,4 +1,4 @@
-import { jwtVerify, SignJWT, CompactEncrypt, compactDecrypt } from 'jose'
+import { SignJWT, CompactEncrypt } from 'jose'
 
 const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || 'dev-secret-key')
 
@@ -24,26 +24,4 @@ export async function generateTempLink(expiryMs: number): Promise<{
     .encrypt(await getEncryptionKey())
 
   return { token: encrypted }
-}
-
-export async function validateTempToken(
-  token: string
-): Promise<{ valid: boolean; error?: string }> {
-  try {
-    const decrypted = await compactDecrypt(token, await getEncryptionKey())
-    const jwt = new TextDecoder().decode(decrypted.plaintext)
-
-    const verified = await jwtVerify(jwt, secret)
-
-    if (verified.payload.sub !== 'guest') {
-      return { valid: false, error: 'Invalid token type' }
-    }
-
-    return { valid: true }
-  } catch (error) {
-    return {
-      valid: false,
-      error: error instanceof Error ? error.message : 'Invalid token'
-    }
-  }
 }

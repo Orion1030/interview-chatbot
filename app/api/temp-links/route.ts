@@ -1,4 +1,4 @@
-import { generateTempLink, validateTempToken } from '@/lib/temp-link-utils'
+import { generateTempLink } from '@/lib/temp-link-utils'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { getBasicAuthUsername } from '@/lib/basic-auth'
 import { NextRequest, NextResponse } from 'next/server'
