@@ -130,6 +130,11 @@ export function Sidebar() {
     }
   }
 
+  const handleStartNewSession = (profileName: string) => {
+    startNewSession(profileName, 'chat')
+    setSidebarOpen(false)
+  }
+
   return (
     <>
       <button
@@ -174,7 +179,7 @@ export function Sidebar() {
                       <button
                         onClick={() => {
                           if (!isActive) {
-                            startNewSession(profile.name, 'chat')
+                            handleStartNewSession(profile.name)
                           }
                         }}
                         className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2"
@@ -187,7 +192,7 @@ export function Sidebar() {
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 p-0"
-                          onClick={() => startNewSession(profile.name, 'chat')}
+                          onClick={() => handleStartNewSession(profile.name)}
                           title="Start new session"
                         >
                           <IconPlus className="h-3 w-3" />
