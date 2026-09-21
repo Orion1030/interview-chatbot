@@ -133,18 +133,16 @@ export function Sidebar() {
   return (
     <>
       <button
+        type="button"
         onClick={() => setSidebarOpen(true)}
-        className="-ml-2 h-9 w-9 p-0 hover:bg-accent rounded-md"
+        aria-label="Open sidebar"
+        className="flex size-9 items-center justify-center rounded-lg p-0 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <IconSidebar className="h-6 w-6" />
+        <IconSidebar className="size-5" />
         <span className="sr-only">Open Sidebar</span>
       </button>
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent
-          className="inset-y-0 flex h-auto w-[300px] flex-col p-0"
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
+        <SheetContent className="inset-y-0 flex h-auto w-[300px] flex-col p-0">
           <SheetHeader className="p-4">
             <SheetTitle className="text-sm">Sessions</SheetTitle>
           </SheetHeader>
