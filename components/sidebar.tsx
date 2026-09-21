@@ -173,7 +173,9 @@ export function Sidebar() {
                     >
                       <button
                         onClick={() => {
-                          window.dispatchEvent(new CustomEvent('start-session', { detail: { profileName: profile.name, mode: 'chat', meta: profile.meta } }))
+                          if (!isActive) {
+                            startNewSession(profile.name, 'chat')
+                          }
                         }}
                         className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2"
                       >
