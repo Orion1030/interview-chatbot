@@ -43,7 +43,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     currentSessionId,
     currentProfile,
     profiles,
-    sessionHistory,
     loadSession,
     startNewSession,
     saveCurrentSession,
@@ -127,9 +126,9 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     loadedSessionRef.current = currentSessionId
 
     if (currentSessionId) {
-      // Read the already-loaded provider state first. Falling back to localStorage
-      // here would synchronously parse the full history during navigation.
-      const session = sessionHistory.find(h => h.id === currentSessionId)
+      // Load the selected transcript from persistent storage instead of using
+      // the provider's in-memory history state as a transcript cache.
+      const session = loadSession(currentSessionId)
       if (session) {
         setMessages(session.messages)
         setFocusInput(session.meta?.focus || '')
@@ -143,7 +142,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       setTechStackInput(profile?.meta?.tech || '')
       setExperienceInput(profile?.meta?.experience || '')
     }
-  }, [currentSessionId, currentProfile, sessionHistory, profiles, setMessages, stop])
+  }, [currentSessionId, currentProfile, profiles, loadSession, setMessages, stop])
 
   useEffect(() => {
     const handleStartSession = (e: Event) => {

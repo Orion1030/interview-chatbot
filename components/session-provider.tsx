@@ -138,14 +138,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const loadSession = useCallback((sessionId: string): SessionEntry | null => {
-    const session = sessionHistory.find(h => h.id === sessionId) || getHistory().find(h => h.id === sessionId)
+    // The transcript is always loaded from persistent storage. React state only
+    // drives the sidebar index and must not become an in-memory transcript cache.
+    const session = getHistory().find(h => h.id === sessionId) || null
     if (session) {
       setCurrentProfile(session.profile)
       setCurrentMode(session.mode || 'chat')
       setCurrentSessionId(session.id)
     }
-    return session || null
-  }, [sessionHistory])
+    return session
+  }, [])
 
   const saveCurrentSession = useCallback((messages: UIMessage[], meta?: Record<string, any>) => {
     if (messages.length === 0) return
