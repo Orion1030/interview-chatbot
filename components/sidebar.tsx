@@ -216,7 +216,7 @@ export function Sidebar() {
             </div>
           </div>
 
-          <HistorySection />
+          <HistorySection onSelect={() => setSidebarOpen(false)} />
         </div>
       </SheetContent>
 
@@ -311,7 +311,7 @@ export function Sidebar() {
   </>)
 }
 
-function HistorySection() {
+function HistorySection({ onSelect }: { onSelect: () => void }) {
   const { sessionHistory, historyLimit, setHistoryLimit, loadSession, currentSessionId, removeSession } = useSession()
   const [editingLimit, setEditingLimit] = React.useState(false)
   const [limitInput, setLimitInput] = React.useState(String(historyLimit))
@@ -389,7 +389,10 @@ function HistorySection() {
                 className={`group relative flex items-center rounded-md ${isActive ? 'bg-accent' : ''}`}
               >
                 <button
-                  onClick={() => loadSession(session.id)}
+                  onClick={() => {
+                    loadSession(session.id)
+                    onSelect()
+                  }}
                   className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2"
                 >
                   <IconMessage className="h-4 w-4 shrink-0" />
