@@ -31,7 +31,7 @@ import {
   SheetTitle,
   SheetTrigger
 } from '@/components/ui/sheet'
-import { IconSidebar, IconPlus, IconEdit, IconTrash, IconMessage, IconClose } from '@/components/ui/icons'
+import { IconSidebar, IconPlus, IconEdit, IconTrash, IconMessage, IconUser, IconClose } from '@/components/ui/icons'
 
 export function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
@@ -130,21 +130,24 @@ export function Sidebar() {
     }
   }
 
+  const handleStartNewSession = (profileName: string) => {
+    startNewSession(profileName, 'chat')
+    setSidebarOpen(false)
+  }
+
   return (
     <>
       <button
+        type="button"
         onClick={() => setSidebarOpen(true)}
-        className="-ml-2 h-9 w-9 p-0 hover:bg-accent rounded-md"
+        aria-label="Open sidebar"
+        className="flex size-9 items-center justify-center rounded-lg p-0 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <IconSidebar className="h-6 w-6" />
+        <IconSidebar className="size-5" />
         <span className="sr-only">Open Sidebar</span>
       </button>
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent
-          className="inset-y-0 flex h-auto w-[300px] flex-col p-0"
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
+        <SheetContent className="inset-y-0 flex h-auto w-[300px] flex-col p-0">
           <SheetHeader className="p-4">
             <SheetTitle className="text-sm">Sessions</SheetTitle>
           </SheetHeader>
@@ -175,11 +178,13 @@ export function Sidebar() {
                     >
                       <button
                         onClick={() => {
-                          window.dispatchEvent(new CustomEvent('start-session', { detail: { profileName: profile.name, mode: 'chat', meta: profile.meta } }))
+                          if (!isActive) {
+                            handleStartNewSession(profile.name)
+                          }
                         }}
                         className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2"
                       >
-                        <IconMessage className="h-4 w-4" />
+                        <IconUser className="h-4 w-4" />
                         <span className="truncate">{profile.name}</span>
                       </button>
                       <div className="absolute right-1 hidden group-hover:flex items-center gap-0.5">
@@ -187,7 +192,7 @@ export function Sidebar() {
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 p-0"
-                          onClick={() => startNewSession(profile.name, 'chat')}
+                          onClick={() => handleStartNewSession(profile.name)}
                           title="Start new session"
                         >
                           <IconPlus className="h-3 w-3" />
@@ -216,7 +221,7 @@ export function Sidebar() {
             </div>
           </div>
 
-          <HistorySection />
+          <HistorySection onSelect={() => setSidebarOpen(false)} />
         </div>
       </SheetContent>
 
@@ -311,7 +316,7 @@ export function Sidebar() {
   </>)
 }
 
-function HistorySection() {
+function HistorySection({ onSelect }: { onSelect: () => void }) {
   const { sessionHistory, historyLimit, setHistoryLimit, loadSession, currentSessionId, removeSession } = useSession()
   const [editingLimit, setEditingLimit] = React.useState(false)
   const [limitInput, setLimitInput] = React.useState(String(historyLimit))
@@ -382,20 +387,24 @@ function HistorySection() {
         ) : (
           sortedHistory.map(session => {
             const isActive = session.id === currentSessionId
+            const userMessageCount = session.messages.filter(message => message.role === 'user').length
             return (
               <div
                 key={session.id}
                 className={`group relative flex items-center rounded-md ${isActive ? 'bg-accent' : ''}`}
               >
                 <button
-                  onClick={() => loadSession(session.id)}
+                  onClick={() => {
+                    loadSession(session.id)
+                    onSelect()
+                  }}
                   className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2"
                 >
                   <IconMessage className="h-4 w-4 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="truncate">{session.profile || 'Untitled'}</div>
                     <div className="text-xs text-muted-foreground">
-                      {session.messages.length} messages · {new Date(session.createdAt).toLocaleDateString()}
+                      {userMessageCount} {userMessageCount === 1 ? 'message' : 'messages'} · {new Date(session.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 </button>

@@ -1,7 +1,5 @@
 import { Button } from '@/components/ui/button'
 import { IconArrowRight } from '@/components/ui/icons'
-import Link from 'next/link'
-
 const exampleMessages = [
   {
     heading: 'Phone Screening',
@@ -13,9 +11,6 @@ export function EmptyScreen({ setInput }: { setInput: (value: string) => void })
   return (
     <div className="mx-auto flex min-h-[58vh] max-w-3xl items-center justify-center px-4 py-16">
       <div className="w-full text-center">
-        <div className="mx-auto mb-6 flex size-12 items-center justify-center rounded-full bg-foreground text-background shadow-sm">
-          <span className="text-xl font-semibold">i</span>
-        </div>
         <h1 className="mb-3 text-2xl font-semibold tracking-tight md:text-3xl">
           How can I help you prepare?
         </h1>
@@ -34,16 +29,6 @@ export function EmptyScreen({ setInput }: { setInput: (value: string) => void })
               {message.heading}
             </Button>
           ))}
-          <Link href="./resume" target="_blank" rel="nofollow" className="flex min-h-20 items-center rounded-2xl border bg-background p-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted">
-            <IconArrowRight className="mr-2 shrink-0 text-muted-foreground" />
-            Resume Builder
-          </Link>
-
-          <Link href="./culture" target="_blank" rel="nofollow" className="flex min-h-20 items-center rounded-2xl border bg-background p-4 text-sm font-medium shadow-sm transition-colors hover:bg-muted">
-            <IconArrowRight className="mr-2 shrink-0 text-muted-foreground" />
-            Culture Interview
-          </Link>
-          
         </div>
       </div>
     </div>

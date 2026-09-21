@@ -7,7 +7,6 @@ import { useMemo, useEffect, useState, useRef } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { cn } from '@/lib/utils'
-import { getHistory } from '@/lib/session-history'
 import { ChatList } from '@/components/chat-list'
 import { ChatPanel } from '@/components/chat-panel'
 import { EmptyScreen } from '@/components/empty-screen'
@@ -44,7 +43,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     currentSessionId,
     currentProfile,
     profiles,
-    sessionHistory,
     loadSession,
     startNewSession,
     saveCurrentSession,
@@ -61,9 +59,11 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const [selectedExpiry, setSelectedExpiry] = useState('30')
   const [customMinutes, setCustomMinutes] = useState('')
   const [copied, setCopied] = useState(false)
+  const [isLoadingSession, setIsLoadingSession] = useState(false)
 
   const isInitialMount = useRef(true)
   const prevStatusRef = useRef<string | undefined>(undefined)
+  const loadedSessionRef = useRef<string | null | undefined>(undefined)
 
   const transport = useMemo(
     () =>
@@ -92,9 +92,12 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     id,
     transport,
     onError(error) {
-      if (error.message.includes('401')) {
-        toast.error('Unauthorized')
-      }
+      if (error.name === 'AbortError') return
+      toast.error(
+        error.message.includes('401')
+          ? 'Unauthorized'
+          : 'The response could not be generated. Please try again.'
+      )
     }
   })
 
@@ -118,9 +121,16 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   }, [status, messages, focusInput, techStackInput, experienceInput, saveCurrentSession])
 
   useEffect(() => {
+    if (currentSessionId === loadedSessionRef.current) return
+
+    setIsLoadingSession(true)
+    stop()
+    loadedSessionRef.current = currentSessionId
+
     if (currentSessionId) {
-      stop()
-      const session = sessionHistory.find(h => h.id === currentSessionId) || getHistory().find(h => h.id === currentSessionId)
+      // Load the selected transcript from persistent storage instead of using
+      // the provider's in-memory history state as a transcript cache.
+      const session = loadSession(currentSessionId)
       if (session) {
         setMessages(session.messages)
         setFocusInput(session.meta?.focus || '')
@@ -128,33 +138,23 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         setExperienceInput(session.meta?.experience || '')
       }
     } else if (!isInitialMount.current) {
-      stop()
       setMessages([])
       const profile = profiles.find(p => p.name === currentProfile)
-      if (profile?.meta) {
-        setFocusInput(profile.meta.focus || '')
-        setTechStackInput(profile.meta.tech || '')
-        setExperienceInput(profile.meta.experience || '')
-      } else {
-        setFocusInput('')
-        setTechStackInput('')
-        setExperienceInput('')
-      }
+      setFocusInput(profile?.meta?.focus || '')
+      setTechStackInput(profile?.meta?.tech || '')
+      setExperienceInput(profile?.meta?.experience || '')
     }
-  }, [currentSessionId, sessionHistory, currentProfile, profiles, setMessages, stop])
+
+    setIsLoadingSession(false)
+  }, [currentSessionId, currentProfile, profiles, loadSession, setMessages, stop])
 
   useEffect(() => {
     const handleStartSession = (e: Event) => {
       const custom = e as CustomEvent<{ profileName: string; mode: 'chat' | 'resume'; meta?: Record<string, any> }>
       const { profileName, mode, meta } = custom.detail
       if (mode === 'chat') {
-        if (currentSessionId && messages.length > 0) {
-          saveCurrentSession(messages, {
-            focus: focusInput,
-            tech: techStackInput,
-            experience: experienceInput
-          })
-        }
+        // Do not persist an in-progress transcript when switching sessions.
+        // History is written only after the assistant finishes its response.
         startNewSession(profileName, 'chat')
         setMessages([])
         setInput('')
@@ -181,7 +181,14 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   return (
     <>
       <div className={cn('mx-auto w-full max-w-4xl flex-1 pb-[220px] pt-4 md:pt-10', className)}>
-        {!currentProfile ? (
+        {isLoadingSession ? (
+          <div className="flex min-h-64 items-center justify-center px-4" role="status" aria-live="polite">
+            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="size-2 animate-pulse rounded-full bg-current" aria-hidden="true" />
+              Loading conversation…
+            </span>
+          </div>
+        ) : !currentProfile ? (
           <div className="mx-auto max-w-2xl px-4">
             <div className="rounded-lg border bg-background p-8 text-center">
               <h1 className="mb-2 text-lg font-semibold">No Profile Selected</h1>

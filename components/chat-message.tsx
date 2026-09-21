@@ -2,6 +2,7 @@
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 
 import { type UIMessage } from 'ai'
+import { memo } from 'react'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 
@@ -15,7 +16,7 @@ export interface ChatMessageProps {
   message: UIMessage
 }
 
-export function ChatMessage({ message, ...props }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ message, ...props }: ChatMessageProps) {
   return (
     <div
       className={cn(
@@ -69,7 +70,7 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
 
               return (
                 <CodeBlock
-                  key={Math.random()}
+                  key={String(children).replace(/\n$/, '')}
                   language={(match && match[1]) || ''}
                   value={String(children).replace(/\n$/, '')}
                   {...props}
@@ -85,4 +86,4 @@ export function ChatMessage({ message, ...props }: ChatMessageProps) {
       </div>
     </div>
   )
-}
+})

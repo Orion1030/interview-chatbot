@@ -3,6 +3,7 @@
 import {
   ArrowDown,
   ArrowRight,
+  ArrowUp,
   Check,
   Paperclip,
   ChevronDown,
@@ -17,7 +18,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
-  Send,
+  SendHorizontal,
   Settings,
   Share2,
   Sidebar,
@@ -71,7 +72,7 @@ export function IconPaperclip(props: LucideProps) {
 }
 
 export function IconArrowElbow(props: LucideProps) {
-  return <Send {...props} />
+  return <ArrowUp {...props} />
 }
 
 export function IconSpinner({ className, ...props }: LucideProps) {
