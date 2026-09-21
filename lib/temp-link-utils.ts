@@ -21,7 +21,9 @@ export async function validateTempToken(
   token: string
 ): Promise<{ valid: boolean; error?: string }> {
   try {
-    const verified = await jwtVerify(token, secret)
+    const jwt = Buffer.from(token, 'base64url').toString('utf-8')
+
+    const verified = await jwtVerify(jwt, secret)
 
     if (verified.payload.sub !== 'guest') {
       return { valid: false, error: 'Invalid token type' }
