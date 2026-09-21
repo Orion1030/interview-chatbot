@@ -7,7 +7,6 @@ import { useMemo, useEffect, useState, useRef } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { cn } from '@/lib/utils'
-import { getHistory } from '@/lib/session-history'
 import { ChatList } from '@/components/chat-list'
 import { ChatPanel } from '@/components/chat-panel'
 import { EmptyScreen } from '@/components/empty-screen'
@@ -64,6 +63,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
 
   const isInitialMount = useRef(true)
   const prevStatusRef = useRef<string | undefined>(undefined)
+  const loadedSessionRef = useRef<string | null | undefined>(undefined)
 
   const transport = useMemo(
     () =>
@@ -121,9 +121,15 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   }, [status, messages, focusInput, techStackInput, experienceInput, saveCurrentSession])
 
   useEffect(() => {
+    if (currentSessionId === loadedSessionRef.current) return
+
+    stop()
+    loadedSessionRef.current = currentSessionId
+
     if (currentSessionId) {
-      stop()
-      const session = sessionHistory.find(h => h.id === currentSessionId) || getHistory().find(h => h.id === currentSessionId)
+      // Read the already-loaded provider state first. Falling back to localStorage
+      // here would synchronously parse the full history during navigation.
+      const session = sessionHistory.find(h => h.id === currentSessionId)
       if (session) {
         setMessages(session.messages)
         setFocusInput(session.meta?.focus || '')
@@ -131,20 +137,13 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         setExperienceInput(session.meta?.experience || '')
       }
     } else if (!isInitialMount.current) {
-      stop()
       setMessages([])
       const profile = profiles.find(p => p.name === currentProfile)
-      if (profile?.meta) {
-        setFocusInput(profile.meta.focus || '')
-        setTechStackInput(profile.meta.tech || '')
-        setExperienceInput(profile.meta.experience || '')
-      } else {
-        setFocusInput('')
-        setTechStackInput('')
-        setExperienceInput('')
-      }
+      setFocusInput(profile?.meta?.focus || '')
+      setTechStackInput(profile?.meta?.tech || '')
+      setExperienceInput(profile?.meta?.experience || '')
     }
-  }, [currentSessionId, sessionHistory, currentProfile, profiles, setMessages, stop])
+  }, [currentSessionId, currentProfile, sessionHistory, profiles, setMessages, stop])
 
   useEffect(() => {
     const handleStartSession = (e: Event) => {
