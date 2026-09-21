@@ -1,7 +1,7 @@
 import { streamText, convertToModelMessages } from 'ai'
 import { openai } from '@ai-sdk/openai'
 
-const MAX_CONTEXT_CHARACTERS = 24000
+const MAX_CONTEXT_CHARACTERS = 12000
 
 function limitConversation(messages: any[]) {
   const selected: any[] = []
@@ -22,7 +22,7 @@ function limitConversation(messages: any[]) {
   return selected
 }
 
-async function createChatResponse(modelName: string, payload: any) {
+async function createChatResponse(modelName: string, payload: any, abortSignal?: AbortSignal) {
   const { messages, techStack, experience, focus } = payload
 
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -36,6 +36,7 @@ async function createChatResponse(modelName: string, payload: any) {
 
   const result = streamText({
     model: openai(modelName),
+    abortSignal,
     maxRetries: 0,
     maxOutputTokens: 1200,
     system: `You are senior software engineer. You are having a technical interview with HR. Please get a point of question and give me the correct and optimized answer for these questions. If possible, include experience or solution. Tell like real person not AI naturally. Also You have to simplify all answers and have to tell the main point. Don't answer you don't have any experience with given question.
@@ -78,10 +79,13 @@ export async function POST(req: Request) {
   try {
     const configuredModel = process.env.OPENAI_MODEL || 'gpt-4.1'
 
-    return await createChatResponse(configuredModel, payload)
+    return await createChatResponse(configuredModel, payload, req.signal)
   } catch (error) {
-    console.error('Chat request failed for configured model:', error)
+    if (req.signal.aborted) {
+      return new Response(null, { status: 499 })
+    }
 
-    return await createChatResponse('gpt-4o-mini', payload)
+    console.error('Chat request failed for configured model:', error)
+    return await createChatResponse('gpt-4o-mini', payload, req.signal)
   }
 }

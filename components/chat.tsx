@@ -92,9 +92,12 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     id,
     transport,
     onError(error) {
-      if (error.message.includes('401')) {
-        toast.error('Unauthorized')
-      }
+      if (error.name === 'AbortError') return
+      toast.error(
+        error.message.includes('401')
+          ? 'Unauthorized'
+          : 'The response could not be generated. Please try again.'
+      )
     }
   })
 
