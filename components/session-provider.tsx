@@ -54,7 +54,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [currentMode, setCurrentMode] = useState<'chat' | 'resume'>('chat')
 
   const limitRef = useRef(historyLimit)
+  const historyRef = useRef(sessionHistory)
+  const sessionIdRef = useRef(currentSessionId)
+  const profileRef = useRef(currentProfile)
+  const modeRef = useRef(currentMode)
   limitRef.current = historyLimit
+  historyRef.current = sessionHistory
+  sessionIdRef.current = currentSessionId
+  profileRef.current = currentProfile
+  modeRef.current = currentMode
 
   useEffect(() => {
     setProfiles(getProfiles())
@@ -140,34 +148,54 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [sessionHistory])
 
   const saveCurrentSession = useCallback((messages: UIMessage[], meta?: Record<string, any>) => {
-    const limit = limitRef.current
+    if (messages.length === 0) return
 
-    if (currentSessionId) {
-      const existing = sessionHistory.find(h => h.id === currentSessionId)
-      const updated: SessionEntry = {
-        id: currentSessionId,
-        profile: currentProfile,
-        messages,
-        createdAt: existing?.createdAt || Date.now(),
-        mode: currentMode,
-        meta: meta || {}
+    const limit = limitRef.current
+    const existingSessionId = sessionIdRef.current
+    const existingHistory = historyRef.current
+    const profile = profileRef.current
+    const mode = modeRef.current
+
+    // localStorage serializes synchronously. Defer it until the browser is idle so
+    // large transcripts never block streaming, input, or scrolling.
+    const persist = () => {
+      if (existingSessionId) {
+        const existing = existingHistory.find(h => h.id === existingSessionId)
+        const updated: SessionEntry = {
+          id: existingSessionId,
+          profile,
+          messages,
+          createdAt: existing?.createdAt || Date.now(),
+          mode,
+          meta: meta || {}
+        }
+        const newHistory = updateSession(updated, limit)
+        historyRef.current = newHistory
+        setSessionHistory(newHistory)
+      } else {
+        const newSession: SessionEntry = {
+          id: crypto.randomUUID(),
+          profile,
+          messages,
+          createdAt: Date.now(),
+          mode,
+          meta: meta || {}
+        }
+        const newHistory = addSession(newSession, limit)
+        historyRef.current = newHistory
+        setSessionHistory(newHistory)
+        sessionIdRef.current = newSession.id
+        setCurrentSessionId(newSession.id)
       }
-      const newHistory = updateSession(updated, limit)
-      setSessionHistory(newHistory)
-    } else if (messages.length > 0) {
-      const newSession: SessionEntry = {
-        id: crypto.randomUUID(),
-        profile: currentProfile,
-        messages,
-        createdAt: Date.now(),
-        mode: currentMode,
-        meta: meta || {}
-      }
-      const newHistory = addSession(newSession, limit)
-      setSessionHistory(newHistory)
-      setCurrentSessionId(newSession.id)
     }
-  }, [currentSessionId, currentProfile, currentMode, sessionHistory])
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(persist, { timeout: 1000 })
+    } else {
+      globalThis.setTimeout(persist, 0)
+    }
+  }, [])
+
 
   const clearCurrentSession = useCallback(() => {
     setCurrentSessionId(null)
