@@ -1,6 +1,27 @@
 import { streamText, convertToModelMessages } from 'ai'
 import { openai } from '@ai-sdk/openai'
 
+const MAX_CONTEXT_CHARACTERS = 24000
+
+function limitConversation(messages: any[]) {
+  const selected: any[] = []
+  let characters = 0
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]
+    const messageCharacters = JSON.stringify(message).length
+
+    if (selected.length > 0 && characters + messageCharacters > MAX_CONTEXT_CHARACTERS) {
+      break
+    }
+
+    selected.unshift(message)
+    characters += messageCharacters
+  }
+
+  return selected
+}
+
 async function createChatResponse(modelName: string, payload: any) {
   const { messages, techStack, experience, focus } = payload
 
@@ -11,10 +32,12 @@ async function createChatResponse(modelName: string, payload: any) {
     })
   }
 
-  const modelMessages = await convertToModelMessages(messages)
+  const modelMessages = await convertToModelMessages(limitConversation(messages))
 
   const result = streamText({
     model: openai(modelName),
+    maxRetries: 0,
+    maxOutputTokens: 1200,
     system: `You are senior software engineer. You are having a technical interview with HR. Please get a point of question and give me the correct and optimized answer for these questions. If possible, include experience or solution. Tell like real person not AI naturally. Also You have to simplify all answers and have to tell the main point. Don't answer you don't have any experience with given question.
 You must use verbal/spoken English not formal/written English at all! Also must use the simple statements not compound statements if it is possible! Try to choose easy-to-pronounce words.
 Interview focuses on <${focus ?? 'Technical'}>.
