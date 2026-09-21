@@ -382,6 +382,7 @@ function HistorySection() {
         ) : (
           sortedHistory.map(session => {
             const isActive = session.id === currentSessionId
+            const userMessageCount = session.messages.filter(message => message.role === 'user').length
             return (
               <div
                 key={session.id}
@@ -395,7 +396,7 @@ function HistorySection() {
                   <div className="flex-1 min-w-0">
                     <div className="truncate">{session.profile || 'Untitled'}</div>
                     <div className="text-xs text-muted-foreground">
-                      {session.messages.length} messages · {new Date(session.createdAt).toLocaleDateString()}
+                      {userMessageCount} {userMessageCount === 1 ? 'message' : 'messages'} · {new Date(session.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 </button>
