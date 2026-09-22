@@ -37,11 +37,7 @@ export function GuestLinkIcon() {
         ? parseInt(customMinutes)
         : parseInt(selectedExpiry)
 
-    if (
-      isNaN(finalMinutes) ||
-      finalMinutes < 1 ||
-      finalMinutes > 1440
-    ) {
+    if (isNaN(finalMinutes) || finalMinutes < 1 || finalMinutes > 1440) {
       toast.error('Invalid time. Must be between 1 and 1440 minutes.')
       return
     }
@@ -75,12 +71,13 @@ export function GuestLinkIcon() {
     <>
       <Button
         variant="ghost"
-        size="icon"
+        size="sm"
         onClick={() => setOpen(true)}
         disabled={isResponding}
-        title="Generate guest link"
+        className="gap-2"
       >
-        <IconLink />
+        <IconLink className="size-4" />
+        <span>Get Guest Link</span>
         <span className="sr-only">Generate guest link</span>
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -143,7 +140,11 @@ export function GuestLinkIcon() {
                     setTimeout(() => setCopied(false), 2000)
                   }}
                 >
-                  {copied ? <IconCheck className="h-4 w-4" /> : <IconCopy className="h-4 w-4" />}
+                  {copied ? (
+                    <IconCheck className="h-4 w-4" />
+                  ) : (
+                    <IconCopy className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               <DialogFooter>

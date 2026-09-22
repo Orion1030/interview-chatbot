@@ -197,7 +197,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
           </div>
         ) : messages.length ? (
           <>
-            <ChatList messages={messages} />
+            <ChatList messages={messages} onRegenerate={regenerate} isResponding={isResponding} />
             <ChatScrollAnchor trackVisibility={status !== 'ready'} />
           </>
         ) : (
