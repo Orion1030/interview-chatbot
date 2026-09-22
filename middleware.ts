@@ -3,26 +3,10 @@ import { validateTempToken } from '@/lib/temp-link-utils'
 
 const GUEST_COOKIE = 'guest-session'
 
-function redirectToExpired(request: NextRequest) {
-  const url = request.nextUrl.clone()
-  url.pathname = '/temp-link-expired'
-  return NextResponse.redirect(url)
-}
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (pathname === '/temp') {
-    return NextResponse.next()
-  }
-
-  if (pathname === '/temp-link-expired') {
-    const token = request.nextUrl.searchParams.get('token')
-    if (token) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/temp'
-      return NextResponse.redirect(url)
-    }
     return NextResponse.next()
   }
 
@@ -33,15 +17,13 @@ export async function middleware(request: NextRequest) {
   const guestCookie = request.cookies.get(GUEST_COOKIE)?.value
 
   if (!guestCookie) {
-    return redirectToExpired(request)
+    return new NextResponse(null, { status: 404 })
   }
 
   const result = await validateTempToken(guestCookie)
 
   if (!result.valid) {
-    const response = redirectToExpired(request)
-    response.cookies.delete(GUEST_COOKIE)
-    return response
+    return new NextResponse(null, { status: 404 })
   }
 
   return NextResponse.next()
