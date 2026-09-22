@@ -141,11 +141,10 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
 
   useEffect(() => {
     const handleStartSession = (e: Event) => {
+      if (isResponding) return
       const custom = e as CustomEvent<{ profileName: string; mode: 'chat' | 'resume'; meta?: Record<string, any> }>
       const { profileName, mode, meta } = custom.detail
       if (mode === 'chat') {
-        // Do not persist an in-progress transcript when switching sessions.
-        // History is written only after the assistant finishes its response.
         startNewSession(profileName, 'chat')
         setMessages([])
         setInput('')

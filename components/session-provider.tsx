@@ -103,8 +103,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const updateProfile = useCallback((id: string, name: string, meta?: Record<string, any>) => {
-    setProfiles(prev => prev.map(p => p.id === id ? { ...p, name: name.trim() || 'Untitled', meta: meta ?? p.meta } : p))
-  }, [])
+    const profileToUpdate = profiles.find(p => p.id === id)
+    const oldName = profileToUpdate?.name || null
+    const newName = name.trim() || 'Untitled'
+
+    setProfiles(prev => prev.map(p => p.id === id ? { ...p, name: newName, meta: meta ?? p.meta } : p))
+
+    if (oldName && oldName !== newName) {
+      setSessionHistory(prev => {
+        const updated = prev.map(h => h.profile === oldName ? { ...h, profile: newName } : h)
+        saveHistory(updated, limitRef.current)
+        return updated
+      })
+    }
+  }, [profiles])
 
   const removeProfile = useCallback((id: string) => {
     const profileToRemove = profiles.find(p => p.id === id)
@@ -121,9 +133,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     })
 
     if (profileName) {
-      const updatedHistory = sessionHistory.map(h =>
-        h.profile === profileName ? { ...h, profile: null } : h
-      )
+      const updatedHistory = sessionHistory.filter(h => h.profile !== profileName)
       setSessionHistory(updatedHistory)
       saveHistory(updatedHistory, limitRef.current)
 
@@ -142,8 +152,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const loadSession = useCallback((sessionId: string): SessionEntry | null => {
-    // The transcript is always loaded from persistent storage. React state only
-    // drives the sidebar index and must not become an in-memory transcript cache.
     const session = getHistory().find(h => h.id === sessionId) || null
     if (session) {
       setCurrentProfile(session.profile)
@@ -162,47 +170,37 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const profile = profileRef.current
     const mode = modeRef.current
 
-    // localStorage serializes synchronously. Defer it until the browser is idle so
-    // large transcripts never block streaming, input, or scrolling.
-    const persist = () => {
-      if (existingSessionId) {
-        const existing = existingHistory.find(h => h.id === existingSessionId)
-        const updated: SessionEntry = {
-          id: existingSessionId,
-          profile,
-          messages,
-          createdAt: existing?.createdAt || Date.now(),
-          mode,
-          meta: meta || {}
-        }
-        const newHistory = updateSession(updated, limit)
-        historyRef.current = newHistory
-        setSessionHistory(newHistory)
-      } else {
-        const newSession: SessionEntry = {
-          id: crypto.randomUUID(),
-          profile,
-          messages,
-          createdAt: Date.now(),
-          mode,
-          meta: meta || {}
-        }
-        const newHistory = addSession(newSession, limit)
-        historyRef.current = newHistory
-        setSessionHistory(newHistory)
-        sessionIdRef.current = newSession.id
-        setCurrentSessionId(newSession.id)
+    if (existingSessionId) {
+      const existing = existingHistory.find(h => h.id === existingSessionId)
+      const updated: SessionEntry = {
+        id: existingSessionId,
+        profile,
+        messages,
+        createdAt: existing?.createdAt || Date.now(),
+        mode,
+        meta: meta || {}
       }
-      setIsResponding(false)
-    }
-
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      window.requestIdleCallback(persist, { timeout: 1000 })
+      const newHistory = updateSession(updated, limit)
+      historyRef.current = newHistory
+      setSessionHistory(newHistory)
     } else {
-      globalThis.setTimeout(persist, 0)
+      const newSession: SessionEntry = {
+        id: crypto.randomUUID(),
+        profile,
+        messages,
+        createdAt: Date.now(),
+        mode,
+        meta: meta || {}
+      }
+      const newHistory = addSession(newSession, limit)
+      historyRef.current = newHistory
+      setSessionHistory(newHistory)
+      sessionIdRef.current = newSession.id
+      setCurrentSessionId(newSession.id)
     }
-  }, [setIsResponding])
 
+    setIsResponding(false)
+  }, [setIsResponding])
 
   const clearCurrentSession = useCallback(() => {
     setCurrentSessionId(null)
