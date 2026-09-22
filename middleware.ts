@@ -1,42 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { validateTempToken } from '@/lib/temp-link-utils'
 
-const realm = 'Interview Chatbot'
+const GUEST_COOKIE = 'guest-session'
 
-function unauthorized(message: string) {
-  return new NextResponse(message, {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': `Basic realm="${realm}"`,
-      'Cache-Control': 'no-store'
-    }
+function clearCookieAndReject(response: NextResponse): NextResponse {
+  response.cookies.set(GUEST_COOKIE, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0
   })
+  return response
 }
 
-export function middleware(request: NextRequest) {
-  const expectedUsername = process.env.AUTH_USERNAME
-  const expectedPassword = process.env.AUTH_PASSWORD
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
-  if (!expectedUsername || !expectedPassword) {
-    return new NextResponse('Basic authentication is not configured.', { status: 503 })
+  if (pathname === '/temp') {
+    return NextResponse.next()
   }
 
-  const authorization = request.headers.get('authorization')
-  if (!authorization?.startsWith('Basic ')) {
-    return unauthorized('Authentication required')
+  const guestCookie = request.cookies.get(GUEST_COOKIE)?.value
+
+  if (!guestCookie) {
+    return clearCookieAndReject(
+      new NextResponse('404 - This page could not be found.', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0'
+        }
+      })
+    )
   }
 
-  try {
-    const encodedCredentials = authorization.slice('Basic '.length).trim()
-    const credentials = atob(encodedCredentials)
-    const separator = credentials.indexOf(':')
-    const username = separator >= 0 ? credentials.slice(0, separator) : ''
-    const password = separator >= 0 ? credentials.slice(separator + 1) : ''
+  const result = await validateTempToken(guestCookie)
 
-    if (username !== expectedUsername || password !== expectedPassword) {
-      return unauthorized('Invalid credentials')
-    }
-  } catch {
-    return unauthorized('Invalid credentials')
+  if (!result.valid) {
+    return clearCookieAndReject(
+      new NextResponse('404 - This page could not be found.', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0'
+        }
+      })
+    )
   }
 
   return NextResponse.next()
