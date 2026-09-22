@@ -35,7 +35,7 @@ import { IconSidebar, IconPlus, IconEdit, IconTrash, IconMessage, IconUser, Icon
 
 export function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
-  const { profiles, currentProfile, sessionHistory, currentSessionId, addProfile, updateProfile, removeProfile, removeSession, startNewSession } = useSession()
+  const { profiles, currentProfile, sessionHistory, currentSessionId, addProfile, updateProfile, removeProfile, removeSession, startNewSession, isResponding } = useSession()
   const [addDialogOpen, setAddDialogOpen] = React.useState(false)
   const [editDialogOpen, setEditDialogOpen] = React.useState(false)
   const [editingProfile, setEditingProfile] = React.useState<{ id: string; focus: string; tech: string; experience: string } | null>(null)
@@ -140,8 +140,9 @@ export function Sidebar() {
       <button
         type="button"
         onClick={() => setSidebarOpen(true)}
+        disabled={isResponding}
         aria-label="Open sidebar"
-        className="flex size-9 items-center justify-center rounded-lg p-0 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex size-9 items-center justify-center rounded-lg p-0 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:pointer-events-none"
       >
         <IconSidebar className="size-5" />
         <span className="sr-only">Open Sidebar</span>
@@ -161,6 +162,7 @@ export function Sidebar() {
                 size="icon"
                 className="h-6 w-6 p-0"
                 onClick={handleOpenAdd}
+                disabled={isResponding}
               >
                 <IconPlus className="h-4 w-4" />
               </Button>
@@ -178,11 +180,12 @@ export function Sidebar() {
                     >
                       <button
                         onClick={() => {
-                          if (!isActive) {
+                          if (!isActive && !isResponding) {
                             handleStartNewSession(profile.name)
                           }
                         }}
-                        className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2"
+                        disabled={isResponding}
+                        className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
                       >
                         <IconUser className="h-4 w-4" />
                         <span className="truncate">{profile.name}</span>
@@ -193,6 +196,7 @@ export function Sidebar() {
                           size="icon"
                           className="h-6 w-6 p-0"
                           onClick={() => handleStartNewSession(profile.name)}
+                          disabled={isResponding}
                           title="Start new session"
                         >
                           <IconPlus className="h-3 w-3" />
@@ -202,6 +206,7 @@ export function Sidebar() {
                           size="icon"
                           className="h-6 w-6 p-0"
                           onClick={() => handleOpenEdit(profile.id, profile.name, profile.meta)}
+                          disabled={isResponding}
                         >
                           <IconEdit className="h-3 w-3" />
                         </Button>
@@ -210,6 +215,7 @@ export function Sidebar() {
                           size="icon"
                           className="h-6 w-6 p-0 text-destructive"
                           onClick={() => handleDeleteProfile(profile.id)}
+                          disabled={isResponding}
                         >
                           <IconTrash className="h-3 w-3" />
                         </Button>
@@ -317,7 +323,7 @@ export function Sidebar() {
 }
 
 function HistorySection({ onSelect }: { onSelect: () => void }) {
-  const { sessionHistory, historyLimit, setHistoryLimit, loadSession, currentSessionId, removeSession } = useSession()
+  const { sessionHistory, historyLimit, setHistoryLimit, loadSession, currentSessionId, removeSession, isResponding } = useSession()
   const [editingLimit, setEditingLimit] = React.useState(false)
   const [limitInput, setLimitInput] = React.useState(String(historyLimit))
   const [historyDeleteId, setHistoryDeleteId] = React.useState<string | null>(null)
@@ -395,10 +401,13 @@ function HistorySection({ onSelect }: { onSelect: () => void }) {
               >
                 <button
                   onClick={() => {
-                    loadSession(session.id)
-                    onSelect()
+                    if (!isResponding) {
+                      loadSession(session.id)
+                      onSelect()
+                    }
                   }}
-                  className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2"
+                  disabled={isResponding}
+                  className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   <IconMessage className="h-4 w-4 shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -414,6 +423,7 @@ function HistorySection({ onSelect }: { onSelect: () => void }) {
                     size="icon"
                     className="h-6 w-6 p-0 text-destructive"
                     onClick={() => setHistoryDeleteId(session.id)}
+                    disabled={isResponding}
                   >
                     <IconTrash className="h-3 w-3" />
                   </Button>

@@ -4,6 +4,7 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUp,
+  Bot,
   Check,
   Paperclip,
   ChevronDown,
@@ -36,7 +37,7 @@ export function IconNextChat({ inverted: _inverted, ...props }: LucideProps & { 
 }
 
 export function IconOpenAI(props: LucideProps) {
-  return <Sparkles {...props} />
+  return <Bot {...props} />
 }
 
 export function IconVercel(props: LucideProps) {

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { type UIMessage } from 'ai'
 
 import { Separator } from '@/components/ui/separator'
@@ -7,7 +8,7 @@ export interface ChatList {
   messages: UIMessage[]
 }
 
-export function ChatList({ messages }: ChatList) {
+export const ChatList = memo(function ChatList({ messages }: ChatList) {
   if (!messages.length) {
     return null
   }
@@ -24,4 +25,4 @@ export function ChatList({ messages }: ChatList) {
       ))}
     </div>
   )
-}
+})

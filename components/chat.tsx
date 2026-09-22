@@ -12,25 +12,6 @@ import { ChatPanel } from '@/components/chat-panel'
 import { EmptyScreen } from '@/components/empty-screen'
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor'
 import { useSession } from '@/components/session-provider'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Textarea } from './ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
-import { IconCopy, IconCheck } from '@/components/ui/icons'
 
 const IS_PREVIEW = process.env.VERCEL_ENV === 'preview'
 export interface ChatProps extends React.ComponentProps<'div'> {
@@ -46,23 +27,18 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     loadSession,
     startNewSession,
     saveCurrentSession,
-    clearCurrentSession
+    clearCurrentSession,
+    isResponding,
+    setIsResponding
   } = useSession()
 
   const [focusInput, setFocusInput] = useState('')
   const [techStackInput, setTechStackInput] = useState('')
   const [experienceInput, setExperienceInput] = useState('')
   const [input, setInput] = useState('')
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
-  const [generatedUrl, setGeneratedUrl] = useState('')
-  const [linkLoading, setLinkLoading] = useState(false)
-  const [selectedExpiry, setSelectedExpiry] = useState('30')
-  const [customMinutes, setCustomMinutes] = useState('')
-  const [copied, setCopied] = useState(false)
   const [isLoadingSession, setIsLoadingSession] = useState(false)
 
   const isInitialMount = useRef(true)
-  const prevStatusRef = useRef<string | undefined>(undefined)
   const loadedSessionRef = useRef<string | null | undefined>(undefined)
 
   const transport = useMemo(
@@ -85,14 +61,27 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     sendMessage,
     regenerate,
     stop,
+    clearError,
     status,
     error
   } = useChat({
     messages: initialMessages ?? [],
     id,
     transport,
+    throttle: 100,
+    onFinish({ messages: finalMessages, isAbort, isError }) {
+      if (!isAbort && !isError) {
+        saveCurrentSession(finalMessages, {
+          focus: focusInput,
+          tech: techStackInput,
+          experience: experienceInput
+        })
+      }
+    },
     onError(error) {
       if (error.name === 'AbortError') return
+      clearError()
+      setIsResponding(false)
       toast.error(
         error.message.includes('401')
           ? 'Unauthorized'
@@ -104,21 +93,11 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
-      prevStatusRef.current = status
       return
     }
 
-    const prevStatus = prevStatusRef.current
-    if (prevStatus === 'streaming' && status === 'ready') {
-      saveCurrentSession(messages, {
-        focus: focusInput,
-        tech: techStackInput,
-        experience: experienceInput
-      })
-    }
-
-    prevStatusRef.current = status
-  }, [status, messages, focusInput, techStackInput, experienceInput, saveCurrentSession])
+    setIsResponding(status === 'streaming' || status === 'submitted')
+  }, [status, setIsResponding])
 
   useEffect(() => {
     if (currentSessionId === loadedSessionRef.current) return
@@ -128,6 +107,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       setIsLoadingSession(true)
     }
     stop()
+    setIsResponding(false)
     loadedSessionRef.current = currentSessionId
 
     const timerId = setTimeout(() => {
@@ -148,7 +128,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     }, 0)
 
     return () => clearTimeout(timerId)
-  }, [currentSessionId, loadSession, setMessages, stop])
+  }, [currentSessionId, loadSession, setMessages, stop, setIsResponding])
 
   useEffect(() => {
     if (currentSessionId || isInitialMount.current) return
@@ -161,11 +141,10 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
 
   useEffect(() => {
     const handleStartSession = (e: Event) => {
+      if (isResponding) return
       const custom = e as CustomEvent<{ profileName: string; mode: 'chat' | 'resume'; meta?: Record<string, any> }>
       const { profileName, mode, meta } = custom.detail
       if (mode === 'chat') {
-        // Do not persist an in-progress transcript when switching sessions.
-        // History is written only after the assistant finishes its response.
         startNewSession(profileName, 'chat')
         setMessages([])
         setInput('')
@@ -182,11 +161,19 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     }
     window.addEventListener('start-session', handleStartSession)
     return () => window.removeEventListener('start-session', handleStartSession)
-  }, [startNewSession, saveCurrentSession, currentSessionId, messages, focusInput, techStackInput, experienceInput, setMessages])
+  }, [startNewSession, isResponding, setMessages, setInput, setFocusInput, setTechStackInput, setExperienceInput])
 
-  const handleSubmit = async (text: string) => {
-    setInput('')
-    await sendMessage({ text })
+  const handleSend = async (text: string, file?: File) => {
+    await sendMessage({
+      text,
+      files: file
+        ? (() => {
+            const fileList = new DataTransfer()
+            fileList.items.add(file)
+            return fileList.files
+          })()
+        : undefined
+    })
   }
 
   return (
@@ -221,129 +208,13 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         id={id}
         status={status}
         stop={stop}
-        sendMessage={sendMessage}
         regenerate={regenerate}
+        onSubmit={handleSend}
         input={input}
         setInput={setInput}
         messages={messages}
         disabled={!currentProfile}
       />
-
-      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generate Guest Access Link</DialogTitle>
-            <DialogDescription>
-              Create a temporary link for guest access.
-            </DialogDescription>
-          </DialogHeader>
-
-          {!generatedUrl ? (
-            <>
-              <Select value={selectedExpiry} onValueChange={setSelectedExpiry}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select expiry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30 minutes</SelectItem>
-                  <SelectItem value="60">1 hour</SelectItem>
-                  <SelectItem value="120">2 hours</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {selectedExpiry === 'custom' && (
-                <Input
-                  type="number"
-                  placeholder="Minutes (1-1440)"
-                  value={customMinutes}
-                  onChange={e => setCustomMinutes(e.target.value)}
-                  min="1"
-                  max="1440"
-                />
-              )}
-
-              <DialogFooter>
-                <Button
-                  onClick={async () => {
-                    const finalMinutes =
-                      selectedExpiry === 'custom'
-                        ? parseInt(customMinutes)
-                        : parseInt(selectedExpiry)
-
-                    if (
-                      isNaN(finalMinutes) ||
-                      finalMinutes < 1 ||
-                      finalMinutes > 1440
-                    ) {
-                      toast.error('Invalid time. Must be between 1 and 1440 minutes.')
-                      return
-                    }
-
-                    setLinkLoading(true)
-                    try {
-                      const res = await fetch('/api/temp-links', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ expiryMinutes: finalMinutes })
-                      })
-
-                      if (!res.ok) {
-                        const error = await res.json()
-                        throw new Error(error.error || 'Failed to generate link')
-                      }
-
-                      const data = await res.json()
-                      setGeneratedUrl(data.shareUrl)
-                      toast.success('Link generated successfully!')
-                    } catch (error) {
-                      toast.error(
-                        error instanceof Error ? error.message : 'Failed to generate link'
-                      )
-                    } finally {
-                      setLinkLoading(false)
-                    }
-                  }}
-                  disabled={linkLoading}
-                >
-                  {linkLoading ? 'Generating...' : 'Generate'}
-                </Button>
-              </DialogFooter>
-            </>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Share this link:</p>
-              <div className="flex gap-2">
-                <Input readOnly value={generatedUrl} className="text-xs" />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedUrl)
-                    setCopied(true)
-                    toast.success('Link copied to clipboard!')
-                    setTimeout(() => setCopied(false), 2000)
-                  }}
-                >
-                  {copied ? <IconCheck className="h-4 w-4" /> : <IconCopy className="h-4 w-4" />}
-                </Button>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setGeneratedUrl('')
-                    setCustomMinutes('')
-                    setSelectedExpiry('30')
-                  }}
-                >
-                  Generate another
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -22,6 +23,7 @@ import { toast } from 'react-hot-toast'
 import { IconLink, IconCopy, IconCheck } from '@/components/ui/icons'
 
 export function GuestLinkIcon() {
+  const { isResponding } = useSession()
   const [open, setOpen] = useState(false)
   const [generatedUrl, setGeneratedUrl] = useState('')
   const [linkLoading, setLinkLoading] = useState(false)
@@ -75,6 +77,7 @@ export function GuestLinkIcon() {
         variant="ghost"
         size="icon"
         onClick={() => setOpen(true)}
+        disabled={isResponding}
         title="Generate guest link"
       >
         <IconLink />
