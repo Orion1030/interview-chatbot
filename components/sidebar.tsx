@@ -35,10 +35,26 @@ import { IconSidebar, IconPlus, IconEdit, IconTrash, IconMessage, IconUser, Icon
 
 export function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
-  const { profiles, currentProfile, sessionHistory, currentSessionId, addProfile, updateProfile, removeProfile, removeSession, startNewSession, isResponding } = useSession()
+  const {
+    profiles,
+    currentProfile,
+    sessionHistory,
+    currentSessionId,
+    addProfile,
+    updateProfile,
+    removeProfile,
+    removeSession,
+    startNewSession,
+    isResponding
+  } = useSession()
   const [addDialogOpen, setAddDialogOpen] = React.useState(false)
   const [editDialogOpen, setEditDialogOpen] = React.useState(false)
-  const [editingProfile, setEditingProfile] = React.useState<{ id: string; focus: string; tech: string; experience: string } | null>(null)
+  const [editingProfile, setEditingProfile] = React.useState<{
+    id: string
+    focus: string
+    tech: string
+    experience: string
+  } | null>(null)
   const [newFocus, setNewFocus] = React.useState('')
   const [newTech, setNewTech] = React.useState('')
   const [newExperience, setNewExperience] = React.useState('')
@@ -47,10 +63,16 @@ export function Sidebar() {
   const [editExperience, setEditExperience] = React.useState('')
   const [addError, setAddError] = React.useState('')
   const [editError, setEditError] = React.useState('')
-  const [historyDeleteId, setHistoryDeleteId] = React.useState<string | null>(null)
+  const [historyDeleteId, setHistoryDeleteId] = React.useState<string | null>(
+    null
+  )
 
-  const currentSession = currentSessionId ? sessionHistory.find(h => h.id === currentSessionId) : null
-  const currentHasMessages = currentSession ? currentSession.messages.length > 0 : false
+  const currentSession = currentSessionId
+    ? sessionHistory.find(h => h.id === currentSessionId)
+    : null
+  const currentHasMessages = currentSession
+    ? currentSession.messages.length > 0
+    : false
 
   const resetAddForm = () => {
     setNewFocus('')
@@ -65,8 +87,17 @@ export function Sidebar() {
     setAddDialogOpen(true)
   }
 
-  const handleOpenEdit = (id: string, name: string, meta?: Record<string, any>) => {
-    setEditingProfile({ id, focus: meta?.focus || '', tech: meta?.tech || '', experience: meta?.experience || '' })
+  const handleOpenEdit = (
+    id: string,
+    name: string,
+    meta?: Record<string, any>
+  ) => {
+    setEditingProfile({
+      id,
+      focus: meta?.focus || '',
+      tech: meta?.tech || '',
+      experience: meta?.experience || ''
+    })
     setEditFocus(meta?.focus || '')
     setEditTech(meta?.tech || '')
     setEditExperience(meta?.experience || '')
@@ -81,7 +112,10 @@ export function Sidebar() {
     const exists = profiles.some(p => {
       const profileName = (p.name || '').toLowerCase()
       const metaFocus = (p.meta?.focus || '').toLowerCase()
-      return profileName === trimmedFocus.toLowerCase() || metaFocus === trimmedFocus.toLowerCase()
+      return (
+        profileName === trimmedFocus.toLowerCase() ||
+        metaFocus === trimmedFocus.toLowerCase()
+      )
     })
 
     if (exists) {
@@ -106,7 +140,10 @@ export function Sidebar() {
       if (p.id === editingProfile.id) return false
       const profileName = (p.name || '').toLowerCase()
       const metaFocus = (p.meta?.focus || '').toLowerCase()
-      return profileName === trimmedFocus.toLowerCase() || metaFocus === trimmedFocus.toLowerCase()
+      return (
+        profileName === trimmedFocus.toLowerCase() ||
+        metaFocus === trimmedFocus.toLowerCase()
+      )
     })
 
     if (exists) {
@@ -153,180 +190,205 @@ export function Sidebar() {
             <SheetTitle className="text-sm">Sessions</SheetTitle>
           </SheetHeader>
 
-        <div className="flex-1 overflow-auto px-2 space-y-6">
-          <div>
-            <div className="flex items-center justify-between px-2 mb-2">
-              <h3 className="text-xs font-semibold text-muted-foreground">Profiles</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 p-0"
-                onClick={handleOpenAdd}
-                disabled={isResponding}
-              >
-                <IconPlus className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="max-h-[200px] overflow-y-auto space-y-1">
-              {profiles.length === 0 ? (
-                <p className="text-xs text-muted-foreground px-2 py-2">No profiles yet. Create one to start chatting.</p>
-              ) : (
-                profiles.map(profile => {
-                  const isActive = profile.name === currentProfile
-                  return (
-                    <div
-                      key={profile.id}
-                      className={`group relative flex items-center rounded-md ${isActive ? 'bg-accent' : ''}`}
-                    >
-                      <button
-                        onClick={() => {
-                          if (!isActive && !isResponding) {
-                            handleStartNewSession(profile.name)
-                          }
-                        }}
-                        disabled={isResponding}
-                        className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+          <div className="flex-1 overflow-auto px-2 space-y-6">
+            <div>
+              <div className="flex items-center justify-between px-2 mb-2">
+                <h3 className="text-xs font-semibold text-muted-foreground">
+                  Profiles
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 p-0"
+                  onClick={handleOpenAdd}
+                  disabled={isResponding}
+                >
+                  <IconPlus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="max-h-[200px] overflow-y-auto space-y-1">
+                {profiles.length === 0 ? (
+                  <p className="text-xs text-muted-foreground px-2 py-2">
+                    No profiles yet. Create one to start chatting.
+                  </p>
+                ) : (
+                  profiles.map(profile => {
+                    const isActive = profile.name === currentProfile
+                    return (
+                      <div
+                        key={profile.id}
+                        className={`group relative flex items-center rounded-md ${isActive ? 'bg-accent' : ''}`}
                       >
-                        <IconUser className="h-4 w-4" />
-                        <span className="truncate">{profile.name}</span>
-                      </button>
-                      <div className="absolute right-1 hidden group-hover:flex items-center gap-0.5">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0"
-                          onClick={() => handleStartNewSession(profile.name)}
+                        <button
+                          onClick={() => {
+                            if (!isActive && !isResponding) {
+                              handleStartNewSession(profile.name)
+                            }
+                          }}
                           disabled={isResponding}
-                          title="Start new session"
+                          className="flex-1 text-left px-2 py-1.5 text-sm hover:bg-accent/50 rounded-md flex items-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
                         >
-                          <IconPlus className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0"
-                          onClick={() => handleOpenEdit(profile.id, profile.name, profile.meta)}
-                          disabled={isResponding}
-                        >
-                          <IconEdit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 p-0 text-destructive"
-                          onClick={() => handleDeleteProfile(profile.id)}
-                          disabled={isResponding}
-                        >
-                          <IconTrash className="h-3 w-3" />
-                        </Button>
+                          <IconUser className="h-4 w-4" />
+                          <span className="truncate">{profile.name}</span>
+                        </button>
+                        <div className="absolute right-1 hidden group-hover:flex items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 p-0"
+                            onClick={() => handleStartNewSession(profile.name)}
+                            disabled={isResponding}
+                            title="Start new session"
+                          >
+                            <IconPlus className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 p-0"
+                            onClick={() =>
+                              handleOpenEdit(
+                                profile.id,
+                                profile.name,
+                                profile.meta
+                              )
+                            }
+                            disabled={isResponding}
+                          >
+                            <IconEdit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 p-0 text-destructive"
+                            onClick={() => handleDeleteProfile(profile.id)}
+                            disabled={isResponding}
+                          >
+                            <IconTrash className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )
-                })
-              )}
+                    )
+                  })
+                )}
+              </div>
             </div>
+
+            <HistorySection onSelect={() => setSidebarOpen(false)} />
           </div>
+        </SheetContent>
 
-          <HistorySection onSelect={() => setSidebarOpen(false)} />
-        </div>
-      </SheetContent>
-
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter your topic of interview</DialogTitle>
-            <DialogDescription>
-              This is for training AI with your idea.
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogContent className="max-h-[99vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Enter your topic of interview</DialogTitle>
+              <DialogDescription>
+                This is for training AI with your idea.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogDescription>Interview Focus</DialogDescription>
+            <Input
+              value={newFocus}
+              placeholder="Focus"
+              onChange={e => {
+                setNewFocus(e.target.value)
+                if (addError) setAddError('')
+              }}
+            />
+            {addError && (
+              <p className="text-xs text-destructive mt-1">{addError}</p>
+            )}
+            <DialogDescription className="mt-[10px]">
+              Technical Stack: eg : React.js, Asp.Net, Python
             </DialogDescription>
-          </DialogHeader>
-          <DialogDescription>Interview Focus</DialogDescription>
-          <Input
-            value={newFocus}
-            placeholder="Focus"
-            onChange={e => {
-              setNewFocus(e.target.value)
-              if (addError) setAddError('')
-            }}
-          />
-          {addError && (
-            <p className="text-xs text-destructive mt-1">{addError}</p>
-          )}
-          <DialogDescription className="mt-[10px]">
-            Technical Stack: eg : React.js, Asp.Net, Python
-          </DialogDescription>
-          <Input
-            value={newTech}
-            placeholder="Technical Stack"
-            onChange={e => setNewTech(e.target.value)}
-          />
-          <DialogDescription className="mt-[10px]">
-            Experience/Resume:
-          </DialogDescription>
-          <Textarea
-            className="h-[400px]"
-            value={newExperience}
-            placeholder="Experience"
-            onChange={e => setNewExperience(e.target.value)}
-          />
-          <DialogFooter className="items-center">
-            <Button variant="ghost" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddProfile}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter your topic of interview</DialogTitle>
-            <DialogDescription>
-              This is for training AI with your idea.
+            <Input
+              value={newTech}
+              placeholder="Technical Stack"
+              onChange={e => setNewTech(e.target.value)}
+            />
+            <DialogDescription className="mt-[10px]">
+              Experience/Resume:
             </DialogDescription>
-          </DialogHeader>
-          <DialogDescription>Interview Focus</DialogDescription>
-          <Input
-            value={editFocus}
-            placeholder="Focus"
-            onChange={e => {
-              setEditFocus(e.target.value)
-              if (editError) setEditError('')
-            }}
-          />
-          {editError && (
-            <p className="text-xs text-destructive mt-1">{editError}</p>
-          )}
-          <DialogDescription className="mt-[10px]">
-            Technical Stack: eg : React.js, Asp.Net, Python
-          </DialogDescription>
-          <Input
-            value={editTech}
-            placeholder="Technical Stack"
-            onChange={e => setEditTech(e.target.value)}
-          />
-          <DialogDescription className="mt-[10px]">
-            Experience/Resume:
-          </DialogDescription>
-          <Textarea
-            className="h-[400px]"
-            value={editExperience}
-            placeholder="Experience"
-            onChange={e => setEditExperience(e.target.value)}
-          />
-          <DialogFooter className="items-center">
-            <Button variant="ghost" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveEdit}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Sheet>
-  </>)
+            <Textarea
+              className="h-[45vh]"
+              value={newExperience}
+              placeholder="Experience"
+              onChange={e => setNewExperience(e.target.value)}
+            />
+            <DialogFooter className="items-center">
+              <Button variant="ghost" onClick={() => setAddDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddProfile}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Enter your topic of interview</DialogTitle>
+              <DialogDescription>
+                This is for training AI with your idea.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogDescription>Interview Focus</DialogDescription>
+            <Input
+              value={editFocus}
+              placeholder="Focus"
+              onChange={e => {
+                setEditFocus(e.target.value)
+                if (editError) setEditError('')
+              }}
+            />
+            {editError && (
+              <p className="text-xs text-destructive mt-1">{editError}</p>
+            )}
+            <DialogDescription className="mt-[10px]">
+              Technical Stack: eg : React.js, Asp.Net, Python
+            </DialogDescription>
+            <Input
+              value={editTech}
+              placeholder="Technical Stack"
+              onChange={e => setEditTech(e.target.value)}
+            />
+            <DialogDescription className="mt-[10px]">
+              Experience/Resume:
+            </DialogDescription>
+            <Textarea
+              className="h-[45vh]"
+              value={editExperience}
+              placeholder="Experience"
+              onChange={e => setEditExperience(e.target.value)}
+            />
+            <DialogFooter className="items-center">
+              <Button variant="ghost" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Sheet>
+    </>
+  )
 }
 
 function HistorySection({ onSelect }: { onSelect: () => void }) {
-  const { sessionHistory, historyLimit, setHistoryLimit, loadSession, currentSessionId, removeSession, isResponding } = useSession()
+  const {
+    sessionHistory,
+    historyLimit,
+    setHistoryLimit,
+    loadSession,
+    currentSessionId,
+    removeSession,
+    isResponding
+  } = useSession()
   const [editingLimit, setEditingLimit] = React.useState(false)
   const [limitInput, setLimitInput] = React.useState(String(historyLimit))
-  const [historyDeleteId, setHistoryDeleteId] = React.useState<string | null>(null)
+  const [historyDeleteId, setHistoryDeleteId] = React.useState<string | null>(
+    null
+  )
   const historyContainerRef = React.useRef<HTMLDivElement>(null)
 
   const sortedHistory = React.useMemo(() => {
@@ -387,13 +449,20 @@ function HistorySection({ onSelect }: { onSelect: () => void }) {
         )}
       </div>
 
-      <div ref={historyContainerRef} className="max-h-[300px] overflow-y-auto space-y-1">
+      <div
+        ref={historyContainerRef}
+        className="max-h-[300px] overflow-y-auto space-y-1"
+      >
         {sortedHistory.length === 0 ? (
-          <p className="text-xs text-muted-foreground px-2 py-2">No history yet</p>
+          <p className="text-xs text-muted-foreground px-2 py-2">
+            No history yet
+          </p>
         ) : (
           sortedHistory.map(session => {
             const isActive = session.id === currentSessionId
-            const userMessageCount = session.messages.filter(message => message.role === 'user').length
+            const userMessageCount = session.messages.filter(
+              message => message.role === 'user'
+            ).length
             return (
               <div
                 key={session.id}
@@ -411,9 +480,13 @@ function HistorySection({ onSelect }: { onSelect: () => void }) {
                 >
                   <IconMessage className="h-4 w-4 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="truncate">{session.profile || 'Untitled'}</div>
+                    <div className="truncate">
+                      {session.profile || 'Untitled'}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      {userMessageCount} {userMessageCount === 1 ? 'message' : 'messages'} · {new Date(session.createdAt).toLocaleDateString()}
+                      {userMessageCount}{' '}
+                      {userMessageCount === 1 ? 'message' : 'messages'} ·{' '}
+                      {new Date(session.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 </button>
@@ -428,16 +501,24 @@ function HistorySection({ onSelect }: { onSelect: () => void }) {
                     <IconTrash className="h-3 w-3" />
                   </Button>
                 </div>
-                <AlertDialog open={historyDeleteId === session.id} onOpenChange={(open) => !open && setHistoryDeleteId(null)}>
+                <AlertDialog
+                  open={historyDeleteId === session.id}
+                  onOpenChange={open => !open && setHistoryDeleteId(null)}
+                >
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete this session?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will permanently delete this session from your history.
+                        This will permanently delete this session from your
+                        history.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel onClick={() => setHistoryDeleteId(null)}>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel
+                        onClick={() => setHistoryDeleteId(null)}
+                      >
+                        Cancel
+                      </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => {
                           removeSession(session.id)

@@ -3,7 +3,7 @@ import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
 
 import { Button, buttonVariants } from '@/components/ui/button'
-import { IconArrowElbow, IconPaperclip } from '@/components/ui/icons'
+import { IconArrowElbow, IconPaperclip, IconStop } from '@/components/ui/icons'
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +18,7 @@ export interface PromptProps {
   input: string
   setInput: (value: string) => void
   isLoading: boolean
+  onStop?: () => void
   disabled?: boolean
   onFileSelect?: (file: File | null) => void
 }
@@ -27,6 +28,7 @@ export function PromptForm({
   input,
   setInput,
   isLoading,
+  onStop,
   disabled,
   onFileSelect
 }: PromptProps) {
@@ -99,17 +101,22 @@ export function PromptForm({
         <div className="absolute right-0 top-4 sm:right-4">
           <Tooltip>
             <TooltipTrigger
-              type="submit"
+              type={isLoading && onStop ? 'button' : 'submit'}
               className={cn(
                 buttonVariants({ size: 'sm', variant: 'default' }),
                 'h-8 w-8 rounded-full p-0 disabled:pointer-events-none'
               )}
-              disabled={isLoading || input === '' || disabled}
+              disabled={isLoading ? false : (input === '' || disabled)}
+              onClick={isLoading && onStop ? onStop : undefined}
             >
-              <IconArrowElbow />
-              <span className="sr-only">Send message</span>
+              {isLoading && onStop ? <IconStop /> : <IconArrowElbow />}
+              <span className="sr-only">
+                {isLoading && onStop ? 'Stop generating' : 'Send message'}
+              </span>
             </TooltipTrigger>
-            <TooltipContent>Send message</TooltipContent>
+            <TooltipContent>
+              {isLoading && onStop ? 'Stop generating' : 'Send message'}
+            </TooltipContent>
           </Tooltip>
         </div>
       </div>

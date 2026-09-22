@@ -14,16 +14,20 @@ import { ChatMessageActions } from '@/components/chat-message-actions'
 
 export interface ChatMessageProps {
   message: UIMessage
+  onRegenerate?: () => void
+  showRegenerate?: boolean
 }
 
 export const ChatMessage = memo(function ChatMessage({
   message,
+  onRegenerate,
+  showRegenerate,
   ...props
 }: ChatMessageProps) {
   return (
     <div
       className={cn(
-        'group relative mb-8 flex items-start gap-3 px-4 md:mb-10 md:px-0',
+        'group mb-8 flex items-start gap-3 px-4 md:mb-10 md:px-0',
         message.role === 'user' && 'justify-end'
       )}
       {...props}
@@ -90,9 +94,24 @@ export const ChatMessage = memo(function ChatMessage({
           >
             {getMessageText(message)}
           </MemoizedReactMarkdown>
-          <ChatMessageActions message={message} />
+          {message.role === 'assistant' && (
+            <ChatMessageActions
+              message={message}
+              onRegenerate={onRegenerate}
+              showRegenerate={showRegenerate}
+            />
+          )}
         </div>
       </div>
+      {message.role === 'user' && (
+        <div className="self-center">
+          <ChatMessageActions
+            message={message}
+            align="center"
+            className="opacity-100 md:opacity-0 md:group-hover:opacity-100"
+          />
+        </div>
+      )}
     </div>
   )
 })
