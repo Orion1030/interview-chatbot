@@ -1,29 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateTempToken } from '@/lib/temp-link-utils'
 
-const GUEST_COOKIE = 'guest-session'
+const realm = 'Interview Chatbot'
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+function unauthorized(message: string) {
+  return new NextResponse(message, {
+    status: 401,
+    headers: {
+      'WWW-Authenticate': `Basic realm="${realm}"`,
+      'Cache-Control': 'no-store'
+    }
+  })
+}
 
-  if (pathname === '/temp') {
-    return NextResponse.next()
+export function middleware(request: NextRequest) {
+  const expectedUsername = process.env.AUTH_USERNAME
+  const expectedPassword = process.env.AUTH_PASSWORD
+
+  if (!expectedUsername || !expectedPassword) {
+    return new NextResponse('Basic authentication is not configured.', { status: 503 })
   }
 
-  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon.ico')) {
-    return NextResponse.next()
+  const authorization = request.headers.get('authorization')
+  if (!authorization?.startsWith('Basic ')) {
+    return unauthorized('Authentication required')
   }
 
-  const guestCookie = request.cookies.get(GUEST_COOKIE)?.value
+  try {
+    const encodedCredentials = authorization.slice('Basic '.length).trim()
+    const credentials = atob(encodedCredentials)
+    const separator = credentials.indexOf(':')
+    const username = separator >= 0 ? credentials.slice(0, separator) : ''
+    const password = separator >= 0 ? credentials.slice(separator + 1) : ''
 
-  if (!guestCookie) {
-    return new NextResponse(null, { status: 404 })
-  }
-
-  const result = await validateTempToken(guestCookie)
-
-  if (!result.valid) {
-    return new NextResponse(null, { status: 404 })
+    if (username !== expectedUsername || password !== expectedPassword) {
+      return unauthorized('Invalid credentials')
+    }
+  } catch {
+    return unauthorized('Invalid credentials')
   }
 
   return NextResponse.next()
