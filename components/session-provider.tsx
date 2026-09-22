@@ -35,6 +35,9 @@ interface SessionContextValue {
   saveCurrentSession: (messages: UIMessage[], meta?: Record<string, any>) => void
   clearCurrentSession: () => void
   removeSession: (id: string) => void
+
+  isResponding: boolean
+  setIsResponding: (responding: boolean) => void
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null)
@@ -52,6 +55,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [currentProfile, setCurrentProfile] = useState<string | null>(null)
   const [currentMode, setCurrentMode] = useState<'chat' | 'resume'>('chat')
+  const [isResponding, setIsResponding] = useState(false)
 
   const limitRef = useRef(historyLimit)
   const historyRef = useRef(sessionHistory)
@@ -189,6 +193,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         sessionIdRef.current = newSession.id
         setCurrentSessionId(newSession.id)
       }
+      setIsResponding(false)
     }
 
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
@@ -196,7 +201,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     } else {
       globalThis.setTimeout(persist, 0)
     }
-  }, [])
+  }, [setIsResponding])
 
 
   const clearCurrentSession = useCallback(() => {
@@ -231,7 +236,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       startNewSession,
       saveCurrentSession,
       clearCurrentSession,
-      removeSession
+      removeSession,
+      isResponding,
+      setIsResponding
     }}>
       {children}
     </SessionContext.Provider>

@@ -9,7 +9,6 @@ import { FooterText } from '@/components/footer'
 export interface ChatPanelProps
   extends Pick<
     UseChatHelpers<UIMessage>,
-    | 'sendMessage'
     | 'regenerate'
     | 'status'
     | 'messages'
@@ -18,6 +17,7 @@ export interface ChatPanelProps
   id?: string
   input: string
   setInput: (value: string) => void
+  onSubmit: (value: string, file?: File) => Promise<void>
   disabled?: boolean
 }
 
@@ -25,13 +25,13 @@ export function ChatPanel({
   id,
   status,
   stop,
-  sendMessage,
   regenerate,
+  onSubmit,
   input,
   setInput,
   messages,
   disabled
-}: ChatPanelProps) {  
+}: ChatPanelProps) {
   const isLoading = status !== 'ready'
 
   return (
@@ -63,18 +63,7 @@ export function ChatPanel({
         </div>
         <div className="space-y-3 rounded-2xl border bg-background/95 px-3 py-3 shadow-lg backdrop-blur-xl sm:px-4 md:py-4">
           <PromptForm
-            onSubmit={async (value, file) => {
-              await sendMessage({
-                text: value,
-                files: file
-                  ? (() => {
-                      const fileList = new DataTransfer()
-                      fileList.items.add(file)
-                      return fileList.files
-                    })()
-                  : undefined
-              })
-            }}
+            onSubmit={onSubmit}
             input={input}
             setInput={setInput}
             isLoading={isLoading}

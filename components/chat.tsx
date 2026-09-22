@@ -27,7 +27,9 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     loadSession,
     startNewSession,
     saveCurrentSession,
-    clearCurrentSession
+    clearCurrentSession,
+    isResponding,
+    setIsResponding
   } = useSession()
 
   const [focusInput, setFocusInput] = useState('')
@@ -37,7 +39,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const [isLoadingSession, setIsLoadingSession] = useState(false)
 
   const isInitialMount = useRef(true)
-  const prevStatusRef = useRef<string | undefined>(undefined)
   const loadedSessionRef = useRef<string | null | undefined>(undefined)
 
   const transport = useMemo(
@@ -60,14 +61,27 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     sendMessage,
     regenerate,
     stop,
+    clearError,
     status,
     error
   } = useChat({
     messages: initialMessages ?? [],
     id,
     transport,
+    throttle: 100,
+    onFinish({ messages: finalMessages, isAbort, isError }) {
+      if (!isAbort && !isError) {
+        saveCurrentSession(finalMessages, {
+          focus: focusInput,
+          tech: techStackInput,
+          experience: experienceInput
+        })
+      }
+    },
     onError(error) {
       if (error.name === 'AbortError') return
+      clearError()
+      setIsResponding(false)
       toast.error(
         error.message.includes('401')
           ? 'Unauthorized'
@@ -79,21 +93,11 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
-      prevStatusRef.current = status
       return
     }
 
-    const prevStatus = prevStatusRef.current
-    if (prevStatus === 'streaming' && status === 'ready') {
-      saveCurrentSession(messages, {
-        focus: focusInput,
-        tech: techStackInput,
-        experience: experienceInput
-      })
-    }
-
-    prevStatusRef.current = status
-  }, [status, messages, focusInput, techStackInput, experienceInput, saveCurrentSession])
+    setIsResponding(status === 'streaming' || status === 'submitted')
+  }, [status, setIsResponding])
 
   useEffect(() => {
     if (currentSessionId === loadedSessionRef.current) return
@@ -103,6 +107,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       setIsLoadingSession(true)
     }
     stop()
+    setIsResponding(false)
     loadedSessionRef.current = currentSessionId
 
     const timerId = setTimeout(() => {
@@ -123,7 +128,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     }, 0)
 
     return () => clearTimeout(timerId)
-  }, [currentSessionId, loadSession, setMessages, stop])
+  }, [currentSessionId, loadSession, setMessages, stop, setIsResponding])
 
   useEffect(() => {
     if (currentSessionId || isInitialMount.current) return
@@ -157,11 +162,19 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     }
     window.addEventListener('start-session', handleStartSession)
     return () => window.removeEventListener('start-session', handleStartSession)
-  }, [startNewSession, saveCurrentSession, currentSessionId, messages, focusInput, techStackInput, experienceInput, setMessages])
+  }, [startNewSession, isResponding, setMessages, setInput, setFocusInput, setTechStackInput, setExperienceInput])
 
-  const handleSubmit = async (text: string) => {
-    setInput('')
-    await sendMessage({ text })
+  const handleSend = async (text: string, file?: File) => {
+    await sendMessage({
+      text,
+      files: file
+        ? (() => {
+            const fileList = new DataTransfer()
+            fileList.items.add(file)
+            return fileList.files
+          })()
+        : undefined
+    })
   }
 
   return (
@@ -196,8 +209,8 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         id={id}
         status={status}
         stop={stop}
-        sendMessage={sendMessage}
         regenerate={regenerate}
+        onSubmit={handleSend}
         input={input}
         setInput={setInput}
         messages={messages}
